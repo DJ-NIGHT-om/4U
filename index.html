@@ -1,0 +1,182 @@
+<html lang="ar" dir="rtl">
+<head>
+    <link rel="icon" href="logo1.png" type="image/png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="منسق الحفلات">
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="description" content="أنشئ قوائم المناسبات الخاصة بك بكل سهولة">
+    <meta name="keywords" content="حفلات, منسق, أغاني, زفاف, مناسبات">
+    <meta name="author" content="منسق الحفلات">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9IndoaXRlIiBmaWxsPSJub25lIiB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9IndoaXRlIj4KPHA+PHBhdGggZD0iTTI1NiA4QzExOSA4IDggMTE5IDggMjU2czExMSAyNDggMjQ4IDI0OCAyNDgtMTExIDI0OC0yNDhTMzkzIDggMjU2IDh6bTAgNDQ4Yy0xMTAuNSAwLTIwMC04OS41LTIwMC0yMDBTMTQ1LjUgNTYgMjU2IDU2czIwMCA4OS41IDIwMCAyMDAtODkuNSAyMDAtMjAwIDIwMHoiLz48L3N2Zz4KPC9zdmc+">
+    <title>منسق الحفلات</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="pages.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- Browser Compatibility Polyfills -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=fetch,Promise,Object.assign,Array.from"></script>
+    <script>
+        // Websim socket for real-time communication
+        if (!window.WebsimSocket) {
+            const socketScript = document.createElement('script');
+            socketScript.src = "https://cdn.jsdelivr.net/npm/websim-socket@1.0.3/websim-socket.js";
+            document.head.appendChild(socketScript);
+        }
+    </script>
+    <script>
+        // IE11 Support
+        if (!Element.prototype.closest) {
+            Element.prototype.closest = function(s) {
+                var el = this;
+                do {
+                    if (el.matches(s)) return el;
+                    el = el.parentElement || el.parentNode;
+                } while (el !== null && el.nodeType === 1);
+                return null;
+            };
+        }
+        if (!Element.prototype.matches) {
+            Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+        }
+    </script>
+</head>
+<body>
+    <div id="loading-overlay">
+        <div class="spinner"></div>
+        <p>جاري التحميل...</p>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1><img src="logo.png" alt="شعار منسق الحفلات" class="header-logo"><i class="fas fa-magic-wand-sparkles"></i> منسق الحفلات</h1>
+            <p id="header-subtitle">أنشئ قوائم المناسبات الخاصة بك بكل سهولة</p>
+            <div class="user-info">
+                <span id="current-user-display"></span>
+                <a href="user.html" id="show-archive-btn" class="submit-btn header-btn"><i class="fas fa-archive"></i> الأرشيف</a>
+                <button id="logout-btn" class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                </button>
+            </div>
+            <div id="first-playlist-message" class="first-playlist-message hidden">
+                 <p>
+                    <strong id="first-playlist-message-text">
+                        <!-- Dynamic content will be injected here by main.js -->
+                    </strong>
+                </p>
+            </div>
+        </header>
+
+        <div class="actions-container">
+            <button id="show-form-btn" class="submit-btn green-btn"><i class="fas fa-plus-circle"></i> إنشاء  مناسبة جديدة</button>
+        </div>
+
+        <main>
+            <div id="form-section" class="form-container card hidden">
+                <h2 id="form-title"><i class="fas fa-plus-circle"></i> إضافة مناسبة جديدة</h2>
+                <form id="playlist-form">
+                    <input type="hidden" id="playlistId">
+                    <div class="form-group">
+                        <label for="eventDate"><i class="fas fa-calendar-alt icon"></i> تاريخ المناسبة</label>
+                        <div class="date-input-container">
+                            <input type="date" id="eventDate" required max="9999-12-31">
+                            <span id="dayName" class="day-name-display"></span>
+                        </div>
+                        <div id="date-availability-message" class="availability-message"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="eventLocation"><i class="fas fa-map-marker-alt icon"></i> أسم القاعة ، الإستراحة ،....</label>
+                        <input type="text" id="eventLocation" required class="auto-expand-input" placeholder="أدخل اسم القاعة أو الإستراحة هنا...">
+                    </div>
+                    <div class="form-group">
+    <label for="phoneNumber"><i class="fas fa-phone icon"></i> رقم الهاتف للمتابعة (إختياري)) <span class="optional-hint">.</span></label>
+    <input type="tel" id="phoneNumber" pattern="[0-9]{8}" maxlength="8" inputmode="tel" 
+           title="الرجاء إدخال 8 أرقام فقط" placeholder="الهاتف اختياري" 
+           class="auto-expand-input phone-input">
+</div>
+                    <div class="form-group">
+                        <label for="brideZaffa"><i class="fas fa-female icon"></i> اسم زفة العروس</label>
+                        <input type="text" id="brideZaffa" required class="auto-expand-input" placeholder="أدخل اسم زفة العروس هنا...">
+                    </div>
+                    <div class="form-group">
+                        <label for="groomZaffa"><i class="fas fa-male icon"></i> اسم زفة المعرس</label>
+                        <input type="text" id="groomZaffa" required class="auto-expand-input" placeholder="أدخل اسم زفة المعرس هنا...">
+                    </div>
+                    
+                    <div class="songs-section">
+                        <h3><i class="fas fa-music icon"></i>الأغاني المطلوبة بدون_موسيقى</h3>
+                        <div id="songs-container">
+                            <!-- Song input fields will be added here dynamically -->
+                        </div>
+                        <button type="button" id="add-song-btn" class="add-song-btn"><i class="fas fa-plus"></i> إضافة أغنية</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="notes"><i class="fas fa-sticky-note icon"></i> ملاحظات</label>
+                        <textarea id="notes" placeholder="أدخل ملاحظاتك هنا..." class="autoresize"></textarea>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="submit" id="save-btn" class="submit-btn">حفظ البيانات</button>
+                        <button type="button" id="cancel-btn" class="cancel-btn">إلغاء</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="list-container">
+                <h2><i class="fas fa-list-ul"></i> المناسبات المحفوظة</h2>
+                <div id="playlist-section">
+                    <!-- Playlist cards will be dynamically inserted here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="custom-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content card">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <div id="modal-actions" class="modal-buttons">
+                <!-- Buttons are injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>تم التصميم والتطوير لإدارة حفلاتك بكفاءة</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+    <script>
+        /* @tweakable Setting to true will disable the right-click context menu. */
+        const preventContextMenu = false;
+        if (preventContextMenu) {
+            document.addEventListener('contextmenu', e => e.preventDefault());
+        }
+    </script>
+    <script type="importmap">
+      {
+        "imports": {
+          "react": "https://cdn.jsdelivr.net/npm/react@18/umd/react.development.js",
+          "react-dom/client": "https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.development.js"
+        }
+      }
+    </script>
+    <script src="config.js"></script>
+    <script src="modal.js"></script>
+    <script src="ui.js"></script>
+    <script src="form.js"></script>
+    <script src="api.js"></script>
+    <script src="sync.js"></script>
+    <script src="view.js"></script>
+    <script src="playlist.js"></script>
+    <script src="effects.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

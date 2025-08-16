@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="أرشيف الحفلات">
+    <meta name="theme-color" content="#4a90e2">
+    <meta name="description" content="أرشيف الحفلات المنتهية">
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxOTIiIGhlaWdodD0iMTkyIiByeD0iMjQiIGZpbGw9IiM0YTkwZTIiLz4KPHN2ZyB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9IndoaXRlIj4KPHA+PHBhdGggZD0iTTI1NiA4QzExOSA4IDggMTE5IDggMjU2czExMSAyNDggMjQ4IDI0OCAyNDgtMTExIDI0OC0yNDhTMzkzIDggMjU2IDh6bTAgNDQ4Yy0xMTAuNSAwLTIwMC04OS41LTIwMC0yMDBTMTQ1LjUgNTYgMjU2IDU2czIwMCA4OS41IDIwMCAyMDAtODkuNSAyMDAtMjAwIDIwMHoiLz48L3N2Zz4KPC9zdmc+">
+    <title>أرشيف الحفلات</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="components.css">
+    <link rel="stylesheet" href="pages.css">
+    
+    <!-- Browser Compatibility Polyfills -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=fetch,Promise,Object.assign,Array.from"></script>
+    <script>
+        // IE11 Support
+        if (!Element.prototype.closest) {
+            Element.prototype.closest = function(s) {
+                var el = this;
+                do {
+                    if (el.matches(s)) return el;
+                    el = el.parentElement || el.parentNode;
+                } while (el !== null && el.nodeType === 1);
+                return null;
+            };
+        }
+        if (!Element.prototype.matches) {
+            Element.prototype.matches = Element.prototype.msMatchesSelector || Element.prototype.webkitMatchesSelector;
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <header class="archive-header">
+            <h1><i class="fas fa-archive"></i> الأرشيف</h1>
+            <div>
+                <a href="index.html" class="submit-btn"><i class="fas fa-arrow-left"></i> العودة للرئيسية</a>
+                <button id="delete-archive-btn" class="submit-btn red-btn"><i class="fas fa-trash-alt"></i> مسح كل الأرشيف</button>
+            </div>
+        </header>
+
+        <main>
+             <div class="list-container">
+                <div id="playlist-section">
+                    <!-- Archived playlist cards will be dynamically inserted here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <div id="custom-modal-overlay" class="modal-overlay hidden">
+        <div class="modal-content card">
+            <h3 id="modal-title"></h3>
+            <p id="modal-message"></p>
+            <div id="modal-actions" class="modal-buttons">
+                <!-- Buttons are injected here by JS -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>هنا يتم تخزين جميع الحفلات التي انتهى تاريخها.</p>
+    </footer>
+
+    <script>
+        /* @tweakable Setting to true will disable the right-click context menu. */
+        const preventContextMenu = true;
+        if (preventContextMenu) {
+            document.addEventListener('contextmenu', e => e.preventDefault());
+        }
+    </script>
+    <script src="config.js" defer></script>
+    <script src="modal.js" defer></script>
+    <script src="api.js" defer></script>
+    <script src="ui.js" defer></script>
+    <script src="view.js" defer></script>
+    <script src="user.js" defer></script>
+</body>
+</html>
