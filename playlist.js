@@ -42,11 +42,17 @@
         const isFirstPlaylist = !isEdit && !isAdmin && window.getAllPlaylists().length === 0;
 
         var playlistData;
+        var apiPayload;
         
         // --- Optimistic Update ---
         if (isEdit) {
-            // When admin edits, we need to preserve original username and password
             let originalPlaylist = window.getAllSheetData().find(p => p.id == playlistId);
+            if (!originalPlaylist) {
+                console.error("Original playlist not found for edit");
+                window.showAlert("حدث خطأ: لم يتم العثور على القائمة الأصلية للتعديل.");
+                return;
+            }
+
             playlistData = {
                 id: playlistId,
                 date: dom.eventDateInput.value,
@@ -56,9 +62,47 @@
                 groomZaffa: dom.groomZaffaInput.value,
                 songs: songs,
                 notes: dom.notesInput.value,
-                username: originalPlaylist ? originalPlaylist.username : 'unknown',
-                password: originalPlaylist ? originalPlaylist.password : 'unknown'
+                username: originalPlaylist.username,
+                password: originalPlaylist.password
             };
+
+            /* @tweakable This is now controlled from index.html */
+            let changes = {};
+            if (window.sendOnlyChangedFields) {
+                // To reliably compare, we need to handle cases where songs might be a string or an array
+                let originalSongs = [];
+                try {
+                    if (Array.isArray(originalPlaylist.songs)) {
+                        originalSongs = originalPlaylist.songs;
+                    } else if (typeof originalPlaylist.songs === 'string') {
+                        originalSongs = JSON.parse(originalPlaylist.songs);
+                    }
+                } catch (e) { /* default to empty array */ }
+
+                if (playlistData.date !== originalPlaylist.date) changes.date = playlistData.date;
+                if (playlistData.location !== originalPlaylist.location) changes.location = playlistData.location;
+                if (playlistData.phoneNumber !== originalPlaylist.phoneNumber) changes.phoneNumber = playlistData.phoneNumber;
+                if (playlistData.brideZaffa !== originalPlaylist.brideZaffa) changes.brideZaffa = playlistData.brideZaffa;
+                if (playlistData.groomZaffa !== originalPlaylist.groomZaffa) changes.groomZaffa = playlistData.groomZaffa;
+                if (playlistData.notes !== originalPlaylist.notes) changes.notes = playlistData.notes;
+                if (JSON.stringify(playlistData.songs) !== JSON.stringify(originalSongs)) changes.songs = playlistData.songs;
+            }
+
+            apiPayload = {
+                action: 'edit',
+                id: playlistId,
+                changes: changes,
+                forceNotesAsString: window.forceNotesAsString,
+                 // Also send full data for backend fallback
+                ...playlistData
+            };
+            
+            // If no changes were made, don't send to server, just close the form.
+            if (window.sendOnlyChangedFields && Object.keys(changes).length === 0) {
+                 window.resetForm();
+                 return;
+            }
+
         } else {
              // Admin should not be able to create new playlists from this form
             if (isAdmin) {
@@ -76,34 +120,27 @@
                 username: currentUser,
                 password: currentUserPassword || '' // Ensure password exists
             };
+            apiPayload = { ...playlistData, action: 'add', forceNotesAsString: window.forceNotesAsString };
         }
         
         var playlists = window.getAllPlaylists();
         var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
         var newOrUpdatedPlaylist;
 
-        // --- Optimistic Update ---
+        // --- Optimistic UI Update ---
         if (isEdit) {
-            playlistData.id = playlistId;
-            let found = false;
             newOrUpdatedPlaylist = { ...playlistData };
-            playlists = playlists.map(p => {
-                if (p.id.toString() === playlistId.toString()) {
-                    found = true;
-                    return newOrUpdatedPlaylist;
-                }
-                return p;
-            });
-            if (!found) playlists.push(newOrUpdatedPlaylist);
+            playlists = playlists.map(p => p.id.toString() === playlistId.toString() ? newOrUpdatedPlaylist : p);
         } else {
             playlistId = new Date().getTime().toString();
             playlistData.id = playlistId;
+            apiPayload.id = playlistId;
             newOrUpdatedPlaylist = { ...playlistData };
             playlists.push(newOrUpdatedPlaylist);
         }
         
         // Immediately update the UI
-        window.updateLocalPlaylists(playlists);
+        window.updateLocalPlaylists(playlists, newOrUpdatedPlaylist);
         window.resetForm();
 
         // Show confetti for the first playlist
@@ -131,12 +168,6 @@
         }
         
         // --- End Optimistic Update ---
-
-        var apiPayload = {
-            ...playlistData,
-            action: isEdit ? 'edit' : 'add',
-            songs: playlistData.songs, // Ensure songs are sent as an array
-        };
 
         window.postDataToSheet(apiPayload)
             .then(function(result) {
@@ -170,25 +201,22 @@
         var isEditButton = e.target.closest('.edit-btn');
 
         if (isDeleteButton) {
-            /* @tweakable The duration in milliseconds for the delete animation. Should match the CSS animation time. */
+            /* @tweakable Setting to false will cause the item to be removed from the list instantly, without animation. */
+            const useDeleteAnimation = false;
+            /* @tweakable The duration in milliseconds for the delete animation, if enabled. */
             const deleteAnimationDuration = 300;
-            
+
             window.showConfirm('هل أنت متأكد من حذف هذه القائمة؟')
                 .then(function(confirmed) {
                     if (confirmed) {
-                        // --- Animate then Optimistically Update ---
                         var playlists = window.getAllPlaylists();
                         var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
-                        
-                        // 1. Add animation class
-                        card.classList.add('deleting');
-                        
-                        // 2. After animation, update data and UI
-                        setTimeout(() => {
+
+                        // This function contains the logic to remove the item and sync with the server
+                        const performDelete = () => {
                             var updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
                             window.updateLocalPlaylists(updatedPlaylists);
 
-                            // 3. Send delete request to server in the background
                             window.postDataToSheet({ action: 'delete', id: playlistId })
                                 .then(function(result) {
                                     if (result && result.status === 'success') {
@@ -200,10 +228,18 @@
                                 .catch(function(error) {
                                     console.error('Error deleting playlist, reverting UI:', error);
                                     window.showAlert('حدث خطأ أثناء حذف القائمة. سيتم استعادة القائمة.');
-                                    // Revert UI to previous state
-                                    window.updateLocalPlaylists(oldPlaylists);
+                                    window.updateLocalPlaylists(oldPlaylists); // Revert UI
                                 });
-                        }, deleteAnimationDuration);
+                        };
+
+                        if (useDeleteAnimation) {
+                            // --- Animate then Optimistically Update ---
+                            card.classList.add('deleting');
+                            setTimeout(performDelete, deleteAnimationDuration);
+                        } else {
+                            // --- Optimistically Update Instantly ---
+                            performDelete();
+                        }
                     }
                 });
         } else if (isEditButton) {

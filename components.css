@@ -257,7 +257,14 @@ input:focus, textarea:focus {
     border-right: 5px solid var(--primary-color);
     position: relative;
     overflow: hidden;
-  
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease;
+}
+
+.playlist-card.edited {
+    /* @tweakable The background color for a card that has just been edited */
+    background-color: #e3fcef;
+    /* @tweakable The right border color for a card that has just been edited */
+    border-right-color: #2dce89;
 }
 
 .playlist-card.deleting {
@@ -365,6 +372,10 @@ input:focus, textarea:focus {
    
 }
 
+.playlist-card-info p span {
+    color: var(--text-color);
+}
+
 .playlist-card-info p strong {
     color: var(--primary-color);
   
@@ -386,6 +397,7 @@ input:focus, textarea:focus {
     border-radius: 4px;
     border-right: 3px solid var(--secondary-color);
     white-space: pre-wrap; /* Preserve whitespace and newlines */
+    word-break: break-word; /* Ensure long text wraps */
     color: #DB8100;
    font-weight: bold;
 }

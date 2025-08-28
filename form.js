@@ -207,7 +207,15 @@
     function populateEditForm(playlist) {
         var dom = window.getDOMElements();
         
-        resetForm();
+        // Manually reset form parts instead of calling resetForm() to avoid flicker
+        if (dom.playlistForm) {
+            dom.playlistForm.reset();
+        }
+        dom.playlistIdInput.value = '';
+        dom.notesInput.value = '';
+        dom.dayNameDisplay.textContent = '';
+        updateDateAvailabilityMessage(null);
+
         showForm(true);
         
         dom.formTitle.innerHTML = '<i class="fas fa-edit"></i> تعديل القائمة';
@@ -227,10 +235,10 @@
             dom.dayNameDisplay.textContent = '';
         }
 
-        dom.eventLocationInput.value = playlist.location;
-        dom.phoneNumberInput.value = playlist.phoneNumber;
-        dom.brideZaffaInput.value = playlist.brideZaffa;
-        dom.groomZaffaInput.value = playlist.groomZaffa;
+        dom.eventLocationInput.value = playlist.location || '';
+        dom.phoneNumberInput.value = playlist.phoneNumber || '';
+        dom.brideZaffaInput.value = playlist.brideZaffa || '';
+        dom.groomZaffaInput.value = playlist.groomZaffa || '';
         dom.notesInput.value = playlist.notes || '';
         
         if (dom.notesInput) {
@@ -242,37 +250,71 @@
                 setTimeout(() => input.dispatchEvent(new Event('input')), 10);
             }
         });
-        
-        /* @tweakable The duration in milliseconds for the song fields to fade in when editing a playlist. */
-        const songsFadeInDuration = 150; 
-        
-        // Hide songs container to prevent flicker
-        dom.songsContainer.style.opacity = '0';
-        dom.songsContainer.innerHTML = '';
 
-        var songs = [];
-        try {
-            if (typeof playlist.songs === 'string' && playlist.songs.trim().startsWith('[')) {
-                var parsedSongs = JSON.parse(playlist.songs);
-                if (Array.isArray(parsedSongs)) songs = parsedSongs;
-            }
-        } catch(e) { 
-            console.error('Error parsing songs for editing:', e); 
-        }
+        // --- Performance Improvement: Build HTML string for all songs at once ---
+        var songs = Array.isArray(playlist.songs) ? playlist.songs : [];
 
-        songs.forEach(function(song) {
-            addSongField(dom.songsContainer, false, song);
-        });
+        var songsHtml = songs.map(song => `
+            <div class="song-input-group">
+                <div class="auto-expand-input-container song-input-container" data-value="${song}">
+                    <input type="text" class="song-input auto-expand-input" placeholder="أدخل اسم الأغنية" value="${song}">
+                </div>
+                <button type="button" class="remove-song-btn"><i class="fas fa-times-circle"></i></button>
+            </div>
+        `).join('');
 
+        // Add one empty song field if below max limit
         if (songs.length < maxSongs) {
-            addSongField(dom.songsContainer, true);
+            songsHtml += `
+                <div class="song-input-group">
+                    <div class="auto-expand-input-container song-input-container" data-value="">
+                        <input type="text" class="song-input auto-expand-input" placeholder="أدخل اسم الأغنية" value="">
+                    </div>
+                    <button type="button" class="remove-song-btn"><i class="fas fa-times-circle"></i></button>
+                </div>
+            `;
         }
 
-        // Fade songs back in for a smooth transition
-        setTimeout(() => {
-            dom.songsContainer.style.transition = `opacity ${songsFadeInDuration}ms ease-in-out`;
-            dom.songsContainer.style.opacity = '1';
-        }, 50); // A small delay to ensure styles apply correctly
+        dom.songsContainer.innerHTML = songsHtml;
+        
+        // Add event listeners after populating
+        dom.songsContainer.querySelectorAll('.song-input-group').forEach(group => {
+            const input = group.querySelector('.song-input');
+            const removeBtn = group.querySelector('.remove-song-btn');
+            const inputContainer = group.querySelector('.auto-expand-input-container');
+
+            if (input) {
+                input.addEventListener('input', () => {
+                    inputContainer.dataset.value = input.value;
+                });
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        requestAddSongField();
+                    }
+                });
+            }
+            if (removeBtn) {
+                removeBtn.onclick = function() {
+                    if (input.value.trim() === '') {
+                        if (group.parentNode) group.parentNode.removeChild(group);
+                        return;
+                    }
+                    window.showConfirm(window.songDeleteConfirmationMessage, 'تأكيد الحذف')
+                        .then(function(confirmed) {
+                            if (confirmed) {
+                                if (group.parentNode) group.parentNode.removeChild(group);
+                            }
+                        });
+                };
+            }
+        });
+        
+        // Focus the last song input if it's empty
+        const lastSongInput = dom.songsContainer.querySelector('.song-input:last-of-type');
+        if (lastSongInput && lastSongInput.value === '') {
+            lastSongInput.focus();
+        }
     }
 
     function setupAutoExpand(inputEl) {

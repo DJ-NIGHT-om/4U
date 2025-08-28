@@ -3,6 +3,7 @@
     'use strict';
     
     var dom = {};
+    var loadingTimeout;
 
     function getArabicDayName(date) {
         var dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -48,13 +49,23 @@
 
     /**
      * Shows or hides the loading overlay.
-     * @param {boolean} show - `true` to show, `false` to hide.
+     * When showing, it automatically hides after a set duration.
+     * @param {boolean} show - `true` to show, `false` to hide immediately.
      */
     function showLoading(show) {
+        /* @tweakable The maximum time in milliseconds the 'Loading...' screen will be visible. */
+        const loadingScreenMaxDuration = 1000;
+
         var loadingOverlay = getDOMElements().loadingOverlay;
         if (loadingOverlay) {
+            clearTimeout(loadingTimeout); // Clear any existing timeout
+
             if (show) {
                 loadingOverlay.classList.remove('hidden');
+                // Set a timeout to hide the overlay automatically
+                loadingTimeout = setTimeout(function() {
+                    loadingOverlay.classList.add('hidden');
+                }, loadingScreenMaxDuration);
             } else {
                 loadingOverlay.classList.add('hidden');
             }

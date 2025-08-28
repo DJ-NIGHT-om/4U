@@ -155,7 +155,11 @@
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script>
         /* @tweakable Setting to true will disable the right-click context menu. */
-        const preventContextMenu = false;
+        const preventContextMenu = true;
+        /* @tweakable The duration of the 'edited' highlight animation on a card after saving changes, in milliseconds. */
+        const cardHighlightDuration = 2000;
+        /* @tweakable If true, the system will compare old and new values and send only the changed fields to the server for efficiency. */
+        const sendOnlyChangedFields = true;
         if (preventContextMenu) {
             document.addEventListener('contextmenu', e => e.preventDefault());
         }
