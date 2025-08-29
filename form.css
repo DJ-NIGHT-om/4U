@@ -1,5 +1,4 @@
-/* Component styles - forms and inputs */
-
+/* Component styles for forms */
 .optional-hint {
     color: #666;
     font-size: 0.85em;
@@ -51,14 +50,18 @@
 }
 
 /* Icon color assignments */
+label[for="partyName"] .icon { color: var(--icon-color-1); }
+label[for="partyDate"] .icon { color: var(--icon-color-2); }
+label[for="partyTime"] .icon { color: var(--icon-color-3); }
+label[for="partyLocation"] .icon { color: var(--icon-color-4); }
+label[for="guestCount"] .icon { color: var(--icon-color-5); }
+label[for="notes"] .icon { color: var(--icon-color-6); }
 label[for="eventDate"] .icon { color: var(--icon-color-2); }
 label[for="eventLocation"] .icon { color: var(--icon-color-4); }
 label[for="brideZaffa"] .icon { color: var(--icon-color-5); }
 label[for="groomZaffa"] .icon { color: var(--icon-color-1); }
 label[for="phoneNumber"] .icon { color: var(--icon-color-3); }
-label[for="notes"] .icon { color: var(--icon-color-6); }
 .songs-section h3 .icon { color: var(--icon-color-3); }
-
 
 /* @tweakable The opacity of form elements when they are disabled */
 :root { --disabled-opacity: 0.6; }
@@ -69,7 +72,8 @@ input[type="time"]:disabled,
 input[type="number"]:disabled,
 input[type="tel"]:disabled,
 input[type="password"]:disabled,
-textarea:disabled {
+textarea:disabled,
+button:disabled {
     cursor: not-allowed;
     opacity: var(--disabled-opacity);
 }
@@ -90,12 +94,6 @@ textarea {
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-input:focus, textarea:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
-}
-
 /* @tweakable The minimum width for form inputs that expand automatically. */
 :root { --auto-expand-min-width: 150px; }
 
@@ -109,13 +107,15 @@ input:focus, textarea:focus {
 .auto-expand-input-container::after,
 .auto-expand-input-container > input {
     width: auto;
-    min-width: 1px;
+    min-width: 1px; /* Let it shrink to almost nothing */
     grid-area: 1 / 1;
     font: inherit;
     padding: 0.6rem;
     margin: 0;
     border: 1px solid var(--border-color);
     border-radius: 8px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
     box-sizing: border-box;
     appearance: none;
 }
@@ -131,7 +131,7 @@ input:focus, textarea:focus {
 .auto-expand-input-container::after {
     content: attr(data-value) ' ';
     visibility: hidden;
-    white-space: pre;
+    white-space: pre; /* Use pre to respect spaces */
     border-color: transparent;
 }
 
@@ -142,6 +142,12 @@ textarea.autoresize {
     line-height: 1.6;
     /* @tweakable The initial minimum height for the notes textarea. */
     min-height: 120px;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
 .form-buttons {
@@ -172,9 +178,40 @@ textarea.autoresize {
     align-items: center;
 }
 
-#songs-container .song-input-container { flex-grow: 1; }
-#songs-container .song-input { flex-grow: 1; }
+#songs-container .song-input-container {
+    flex-grow: 1;
+}
 
+#songs-container .song-input {
+    flex-grow: 1;
+}
+
+#songs-container .remove-song-btn {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.add-song-btn {
+    background-color: transparent;
+    border: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.add-song-btn:hover {
+    background-color: rgba(74, 144, 226, 0.1);
+}
 
 .date-input-container {
     display: flex;
@@ -219,6 +256,7 @@ textarea.autoresize {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
-    color: transparent;
+    color: transparent; /* Fallback for browsers that do not support text-fill-color */
     white-space: nowrap;
+    font-weight: bold;
 }

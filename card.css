@@ -1,5 +1,4 @@
-/* Component styles - cards */
-
+/* Component styles for cards */
 .card {
     background-color: var(--card-bg-color);
     border-radius: 12px;
@@ -23,6 +22,10 @@
 }
 
 .playlist-card {
+    background-color: var(--card-bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px var(--shadow-color);
     border-right: 5px solid var(--primary-color);
     position: relative;
     overflow: hidden;
@@ -61,19 +64,58 @@
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
-.playlist-card .fa-map-marker-alt { color: var(--icon-color-4); }
-.playlist-card.selected .fa-map-marker-alt { animation: iconPulse 0.3s ease-in-out; }
-.playlist-card .fa-calendar-alt { color: var(--icon-color-2); }
-.playlist-card.selected .fa-calendar-alt { animation: iconPulse 0.3s ease-in-out; }
-.playlist-card .fa-phone { color: var(--icon-color-3); }
-.playlist-card.selected .fa-phone { animation: iconPulse 0.3s ease-in-out; }
-.playlist-card .fa-female { color: var(--icon-color-5); }
-.playlist-card.selected .fa-female { animation: iconPulse 0.3s ease-in-out; }
-.playlist-card .fa-male { color: var(--icon-color-1); }
-.playlist-card.selected .fa-male { animation: iconPulse 0.3s ease-in-out; }
-.playlist-card .fa-music { color: var(--icon-color-3); }
-.playlist-card.selected .fa-music { animation: iconPulse 0.3s ease-in-out; }
-.playlist-card .fa-sticky-note { color: var(--icon-color-6); }
+/* @tweakable The color for the location icon in a playlist card. */
+.playlist-card .fa-map-marker-alt {
+    color: var(--icon-color-4);
+}
+.playlist-card.selected .fa-map-marker-alt {
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+/* @tweakable The color for the calendar icon in a playlist card. */
+.playlist-card .fa-calendar-alt {
+    color: var(--icon-color-2);
+}
+.playlist-card.selected .fa-calendar-alt {
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+/* @tweakable The color for the phone icon in a playlist card. */
+.playlist-card .fa-phone {
+    color: var(--icon-color-3);
+}
+.playlist-card.selected .fa-phone {
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+/* @tweakable The color for the bride icon in a playlist card. */
+.playlist-card .fa-female {
+    color: var(--icon-color-5);
+}
+.playlist-card.selected .fa-female {
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+/* @tweakable The color for the groom icon in a playlist card. */
+.playlist-card .fa-male {
+    color: var(--icon-color-1);
+}
+.playlist-card.selected .fa-male {
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+/* @tweakable The color for the music icon in a playlist card. */
+.playlist-card .fa-music {
+    color: var(--icon-color-3);
+}
+.playlist-card.selected .fa-music {
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+/* @tweakable The color for the notes icon in a playlist card. */
+.playlist-card .fa-sticky-note {
+    color: var(--icon-color-6);
+}
 
 @keyframes iconPulse {
     0% { transform: scale(1); }
@@ -93,22 +135,16 @@
 }
 
 .playlist-card-header h3 {
-    color: #0092cb;
+    color: var(--primary-color);
     font-size: 1.1rem;
     margin-bottom: 0;
     font-weight: bold;
+    color: #0092cb;
 }
 
 .playlist-card-header span {
     color: #0092cb;
     font-weight: bold;
-}
-
-.playlist-card-header .day-name {
-    color: #c34a36;
-    font-size: 1.0rem;
-    font-weight: bold;
-    margin-right: 5px;
 }
 
 .playlist-card-info {
@@ -126,22 +162,31 @@
     background-color: #E3FCE0;
 }
 
-.playlist-card-info p span { color: var(--text-color); }
-.playlist-card-info p strong { color: var(--primary-color); }
+.playlist-card-info p span {
+    color: var(--text-color);
+}
 
-.playlist-notes { margin-top: 1rem; }
+.playlist-card-info p strong {
+    color: var(--primary-color);
+}
+
+.playlist-notes {
+    margin-top: 1rem;
+}
+
 .playlist-notes h4 {
     color: var(--text-color);
     margin-bottom: 0.5rem;
     font-weight: bold;
 }
+
 .playlist-notes p {
     background-color: #FCF4E4;
     padding: 0.5rem;
     border-radius: 4px;
     border-right: 3px solid var(--secondary-color);
-    white-space: pre-wrap;
-    word-break: break-word;
+    white-space: pre-wrap; /* Preserve whitespace and newlines */
+    word-break: break-word; /* Ensure long text wraps */
     color: #DB8100;
     font-weight: bold;
 }
@@ -149,18 +194,24 @@
 .playlist-card .icon {
     margin-left: 10px;
     width: 20px;
+    /* The color is now set on the specific icon classes */
 }
 
-.playlist-songs { margin-top: 1rem; }
+.playlist-songs {
+    margin-top: 1rem;
+}
+
 .playlist-songs h4 {
     color: var(--text-color);
     margin-bottom: 0.5rem;
     font-weight: bold;
 }
+
 .playlist-songs ol {
     padding-right: 20px;
     color: #8e44ad;
 }
+
 .playlist-songs li {
     margin-bottom: 5px;
     font-weight: bold;
@@ -169,10 +220,10 @@
 
 .playlist-actions {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Changed to stack buttons and timestamp */
     gap: 10px;
     margin-top: var(--playlist-actions-margin-top);
-    align-items: flex-start;
+    align-items: flex-start; /* Align items to the start */
 }
 
 .action-buttons-wrapper {
@@ -188,10 +239,20 @@
     margin-top: 5px;
 }
 
+.playlist-card-header .day-name {
+    color: var(--secondary-color);
+    font-size: 1.0rem;
+    font-weight: normal;
+    margin-right: 5px;
+    font-weight: bold;
+    color: #c34a36
+}
 
-/* Responsive design for cards */
+
+/* Responsive design for components */
 @media (max-width: 1200px) {
     #playlist-section {
+        /* @tweakable The number of columns for playlist cards on medium screens */
         grid-template-columns: repeat(2, 1fr);
     }
 }
@@ -204,6 +265,7 @@
 
 @media (max-width: 768px) {
     #playlist-section {
+        /* @tweakable The number of columns for playlist cards on small screens */
         grid-template-columns: 1fr;
     }
 }

@@ -1,4 +1,4 @@
-/* Component styles - modals */
+/* Component styles for modals */
 
 .modal-overlay {
     position: fixed;
@@ -66,7 +66,7 @@
 }
 
 .modal-buttons button {
-    flex: 0 1 auto;
+    flex: 0 1 auto; /* Changed from flex: 1 to prevent buttons from stretching */
     min-width: var(--modal-button-min-width, 100px);
     padding: var(--modal-button-padding, 0.5rem 1rem);
     border: 2px solid var(--primary-color);
@@ -110,9 +110,10 @@
     margin: 1rem 0;
 }
 
-#modal-form-content .form-group { 
-    margin-bottom: 1.2rem; 
+#modal-form-content .form-group {
+    margin-bottom: 1.2rem;
 }
+
 #modal-form-content label {
     display: flex;
     align-items: center;
@@ -120,12 +121,14 @@
     margin-bottom: 0.5rem;
     font-size: 1rem;
 }
+
 #modal-form-content .icon {
     margin-left: 8px;
     color: var(--primary-color);
     width: 20px;
     text-align: center;
 }
+
 #modal-form-content input[type="text"],
 #modal-form-content input[type="password"] {
     width: 100%;
@@ -136,6 +139,7 @@
     font-size: 1rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
+
 #modal-form-content input:focus {
     outline: none;
     border-color: var(--primary-color);
@@ -150,16 +154,19 @@
         margin: 1rem;
         width: calc(100% - 2rem);
     }
-    .modal-content h3 { 
-        font-size: 1.5rem; 
-    }
-    .modal-content p { 
-        font-size: 1.1rem; 
+    
+    .modal-content h3 {
+        font-size: 1.5rem;
     }
     
-    .modal-buttons { 
-        flex-direction: column; 
+    .modal-content p {
+        font-size: 1.1rem;
     }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
     .modal-buttons button {
         flex: none;
         width: 100%;
