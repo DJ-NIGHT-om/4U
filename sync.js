@@ -2,8 +2,8 @@
 (function() {
     'use strict';
     
-    /* @tweakable The delay in milliseconds between each background data sync. 180000ms = 3 minutes. */
-    const syncFrequency = 180000;
+    /* @tweakable The delay in milliseconds between each background data sync. 120000ms = 3 minutes. */
+    const syncFrequency = 120000;
     var syncInterval;
     var allPlaylists = [];
     var allSheetData = []; // To store all data from the sheet for date checking

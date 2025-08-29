@@ -138,6 +138,7 @@
             }
 
             var selectedDate = new Date(selectedDateValue);
+
             /* @tweakable If true, allows selecting invalid dates in the form. Set to false to prevent errors. */
             const allowInvalidDates = false;
             if (!allowInvalidDates && isNaN(selectedDate.getTime())) {

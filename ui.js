@@ -4,6 +4,7 @@
     
     var dom = {};
     var loadingTimeout;
+    var isLoadingBlocked = false; // Flag to prevent re-entrant calls
 
     function getArabicDayName(date) {
         var dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
@@ -53,6 +54,16 @@
      * @param {boolean} show - `true` to show, `false` to hide immediately.
      */
     function showLoading(show) {
+        if (isLoadingBlocked) return; // Prevent re-entrant calls, especially for reload loops
+
+        if (window.refreshPageOnUpdate) {
+            if (show) {
+                isLoadingBlocked = true; // Set flag to block further calls
+                window.location.reload();
+            }
+            return;
+        }
+        
         /* @tweakable The maximum time in milliseconds the 'Loading...' screen will be visible. */
         const loadingScreenMaxDuration = 1000;
 

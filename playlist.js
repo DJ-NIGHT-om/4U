@@ -44,6 +44,13 @@
         var playlistData;
         var apiPayload;
         
+        /* @tweakable Prepending notes with a special character (like a quote) forces Google Sheets to treat it as plain text, preventing unwanted auto-formatting of dates or numbers. */
+        const forceNotesAsStringInSheet = true;
+        let notesValue = dom.notesInput.value;
+        if (forceNotesAsStringInSheet && notesValue) {
+            notesValue = "'" + notesValue;
+        }
+        
         // --- Optimistic Update ---
         if (isEdit) {
             let originalPlaylist = window.getAllSheetData().find(p => p.id == playlistId);
@@ -61,7 +68,7 @@
                 brideZaffa: dom.brideZaffaInput.value,
                 groomZaffa: dom.groomZaffaInput.value,
                 songs: songs,
-                notes: dom.notesInput.value,
+                notes: dom.notesInput.value, // Keep original notes for UI
                 username: originalPlaylist.username,
                 password: originalPlaylist.password
             };
@@ -84,7 +91,7 @@
                 if (playlistData.phoneNumber !== originalPlaylist.phoneNumber) changes.phoneNumber = playlistData.phoneNumber;
                 if (playlistData.brideZaffa !== originalPlaylist.brideZaffa) changes.brideZaffa = playlistData.brideZaffa;
                 if (playlistData.groomZaffa !== originalPlaylist.groomZaffa) changes.groomZaffa = playlistData.groomZaffa;
-                if (playlistData.notes !== originalPlaylist.notes) changes.notes = playlistData.notes;
+                if (dom.notesInput.value !== originalPlaylist.notes) changes.notes = notesValue; // Send formatted notes
                 if (JSON.stringify(playlistData.songs) !== JSON.stringify(originalSongs)) changes.songs = playlistData.songs;
             }
 
@@ -92,9 +99,10 @@
                 action: 'edit',
                 id: playlistId,
                 changes: changes,
-                forceNotesAsString: window.forceNotesAsString,
+                forceNotesAsString: false, // The logic is now handled on the client
                  // Also send full data for backend fallback
-                ...playlistData
+                ...playlistData,
+                notes: notesValue // Ensure payload has formatted notes
             };
             
             // If no changes were made, don't send to server, just close the form.
@@ -116,11 +124,16 @@
                 brideZaffa: dom.brideZaffaInput.value,
                 groomZaffa: dom.groomZaffaInput.value,
                 songs: songs,
-                notes: dom.notesInput.value,
+                notes: dom.notesInput.value, // Keep original notes for UI
                 username: currentUser,
                 password: currentUserPassword || '' // Ensure password exists
             };
-            apiPayload = { ...playlistData, action: 'add', forceNotesAsString: window.forceNotesAsString };
+            apiPayload = { 
+                ...playlistData, 
+                action: 'add', 
+                notes: notesValue, // Send formatted notes
+                forceNotesAsString: false // The logic is now handled on the client
+            };
         }
         
         var playlists = window.getAllPlaylists();
@@ -214,6 +227,14 @@
 
                         // This function contains the logic to remove the item and sync with the server
                         const performDelete = () => {
+                            // Check if this is the last playlist and remove the welcome message if so
+                            if (window.removeWelcomeOnLastDelete && !isAdmin && playlists.length === 1) {
+                                localStorage.removeItem('firstPlaylistCreationTime');
+                                localStorage.removeItem('firstPlaylistWhatsappLink');
+                                // Dispatch event to immediately hide the welcome message
+                                window.dispatchEvent(new CustomEvent('datasync'));
+                            }
+                            
                             var updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
                             window.updateLocalPlaylists(updatedPlaylists);
 

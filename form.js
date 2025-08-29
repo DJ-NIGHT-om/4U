@@ -198,7 +198,12 @@
         [dom.notesInput].forEach(enableAutoresize);
         [dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(setupAutoExpand);
 
-        addSongField(dom.songsContainer, false);
+        /* @tweakable The number of empty song fields to show when creating a new playlist. Must be at least 1. */
+        const initialSongFields = 1;
+        for (let i = 0; i < Math.max(1, initialSongFields); i++) {
+            addSongField(dom.songsContainer, false);
+        }
+
         updateDayNameDisplay(dom.eventDateInput, dom.dayNameDisplay);
         
         showForm(false);

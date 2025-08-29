@@ -1,0 +1,224 @@
+/* Component styles - forms and inputs */
+
+.optional-hint {
+    color: #666;
+    font-size: 0.85em;
+    margin-right: 5px;
+}
+
+.phone-input {
+    text-align: right;
+    direction: ltr;
+    padding-left: 10px;
+}
+
+.phone-input::placeholder {
+    color: #8E7B7B;
+    text-align: right;
+}
+
+.form-container {
+    max-width: var(--form-max-width, 500px);
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+.form-container h2, .list-container h2 {
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.3rem;
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+.form-group {
+    margin-bottom: 0.8rem;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.form-group .icon {
+    margin-left: 8px;
+    color: var(--primary-color);
+    width: 20px;
+    text-align: center;
+}
+
+/* Icon color assignments */
+label[for="eventDate"] .icon { color: var(--icon-color-2); }
+label[for="eventLocation"] .icon { color: var(--icon-color-4); }
+label[for="brideZaffa"] .icon { color: var(--icon-color-5); }
+label[for="groomZaffa"] .icon { color: var(--icon-color-1); }
+label[for="phoneNumber"] .icon { color: var(--icon-color-3); }
+label[for="notes"] .icon { color: var(--icon-color-6); }
+.songs-section h3 .icon { color: var(--icon-color-3); }
+
+
+/* @tweakable The opacity of form elements when they are disabled */
+:root { --disabled-opacity: 0.6; }
+
+input[type="text"]:disabled,
+input[type="date"]:disabled,
+input[type="time"]:disabled,
+input[type="number"]:disabled,
+input[type="tel"]:disabled,
+input[type="password"]:disabled,
+textarea:disabled {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity);
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="tel"],
+input[type="password"],
+textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+/* @tweakable The minimum width for form inputs that expand automatically. */
+:root { --auto-expand-min-width: 150px; }
+
+/* Styles for auto-expanding inputs */
+.auto-expand-input-container {
+    display: inline-grid;
+    width: 100%;
+    vertical-align: top;
+    align-items: center;
+}
+.auto-expand-input-container::after,
+.auto-expand-input-container > input {
+    width: auto;
+    min-width: 1px;
+    grid-area: 1 / 1;
+    font: inherit;
+    padding: 0.6rem;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-sizing: border-box;
+    appearance: none;
+}
+.auto-expand-input-container > input {
+    background-color: transparent;
+    min-width: var(--auto-expand-min-width);
+}
+.auto-expand-input-container > input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+.auto-expand-input-container::after {
+    content: attr(data-value) ' ';
+    visibility: hidden;
+    white-space: pre;
+    border-color: transparent;
+}
+
+textarea.autoresize {
+    /* @tweakable 'vertical' allows manual vertical resize, 'none' disables it */
+    resize: none;
+    overflow-y: hidden;
+    line-height: 1.6;
+    /* @tweakable The initial minimum height for the notes textarea. */
+    min-height: 120px;
+}
+
+.form-buttons {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+}
+
+/* Song input styles */
+.songs-section {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.songs-section h3 {
+    display: flex;
+    align-items: center;
+    color: var(--primary-color);
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+}
+
+#songs-container .song-input-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+#songs-container .song-input-container { flex-grow: 1; }
+#songs-container .song-input { flex-grow: 1; }
+
+
+.date-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.date-input-container > input[type="date"] {
+    width: auto;
+    flex-grow: 1;
+}
+
+.availability-message {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    display: none; /* Hidden by default */
+    transition: all 0.3s ease;
+}
+
+.availability-message.available {
+    color: #28a745;
+    background-color: #e9f7ef;
+    display: block;
+}
+
+.availability-message.booked {
+    color: #dc3545;
+    background-color: #fceeee;
+    display: block;
+}
+
+.day-name-display {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.0rem;
+    background: linear-gradient(45deg, var(--primary-color), blue);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    white-space: nowrap;
+}

@@ -1,0 +1,125 @@
+/* Component styles - buttons */
+
+.submit-btn, .cancel-btn, .action-btn {
+    padding: 0.8rem;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    text-transform: uppercase;
+    margin-top: 0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.form-buttons .submit-btn, .form-buttons .cancel-btn {
+    flex: 1;
+}
+
+.submit-btn {
+    background: linear-gradient(45deg, var(--primary-color), #6aaff8);
+}
+
+.green-btn {
+    background: linear-gradient(45deg, #28a745, #5cb85c) !important;
+}
+
+.green-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+}
+
+.red-btn {
+    background: linear-gradient(45deg, #dc3545, #f5365c) !important;
+}
+
+.red-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+    background-color: #E3FCE0;
+}
+
+.cancel-btn {
+    background: var(--light-text-color);
+}
+
+.cancel-btn:hover {
+    background: #888;
+    transform: translateY(-2px);
+}
+
+.header-btn {
+    flex: 0 1 auto;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    text-transform: none;
+}
+
+.action-btn {
+    background: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: var(--modal-button-padding, 0.4rem 0.8rem);
+    transition: all 0.3s ease;
+    font-weight: bold;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    opacity: 0.9;
+}
+
+.action-btn.edit-btn {
+    background-color: var(--icon-color-2);
+}
+
+.action-btn.delete-btn {
+    background-color: var(--danger-color);
+}
+
+.add-song-btn {
+    background-color: transparent;
+    border: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.add-song-btn:hover {
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+#songs-container .remove-song-btn {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+button:disabled {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity);
+}
+
