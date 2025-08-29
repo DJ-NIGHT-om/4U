@@ -157,7 +157,7 @@
         window.resetForm();
 
         // Show confetti for the first playlist
-        if (isFirstPlaylist && window.getAllPlaylists().length > 0) {
+      if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length > 0) {
            localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
             /* @tweakable The WhatsApp number to send the first playlist details to. */
             const whatsappNumber = '96899383859';
