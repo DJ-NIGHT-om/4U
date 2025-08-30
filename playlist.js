@@ -156,34 +156,29 @@
         window.updateLocalPlaylists(playlists, newOrUpdatedPlaylist);
         window.resetForm();
 
-        // Show confetti for the first playlist
         // Show confetti and create WhatsApp link for the first playlist
-// OR update WhatsApp link when editing any playlist
-if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length > 0) {
-   localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
-    /* @tweakable The WhatsApp number to send the first playlist details to. */
-    const whatsappNumber = '96899383859';
-    /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
-    const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
-    
-    const message = whatsappMessageTemplate
-        .replace('{date}', playlistData.date)
-        .replace('{location}', playlistData.location)
-        .replace('{brideZaffa}', playlistData.brideZaffa)
-        .replace('{groomZaffa}', playlistData.groomZaffa);
-    
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
-    localStorage.setItem('firstPlaylistWhatsappLink', whatsappUrl);
+        if (isFirstPlaylist && playlistId && window.getAllPlaylists().length > 0) {
+            localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
+            /* @tweakable The WhatsApp number to send the first playlist details to. */
+            const whatsappNumber = '96899383859';
+            /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
+            const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
+            
+            const message = whatsappMessageTemplate
+                .replace('{date}', playlistData.date)
+                .replace('{location}', playlistData.location)
+                .replace('{brideZaffa}', playlistData.brideZaffa)
+                .replace('{groomZaffa}', playlistData.groomZaffa);
+            
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+            localStorage.setItem('firstPlaylistWhatsappLink', whatsappUrl);
 
-   // Only show confetti for the first creation, not for edits
-   if (isFirstPlaylist) {
-      if (window.triggerWelcomeConfetti) {
-         window.triggerWelcomeConfetti();
-      }
-      // Manually dispatch event since sync isn't called immediately - ONLY for first creation
-      window.dispatchEvent(new CustomEvent('datasync'));
-   }
-}
+            if (window.triggerWelcomeConfetti) {
+                window.triggerWelcomeConfetti();
+            }
+            // Manually dispatch event since sync isn't called immediately - ONLY for first creation
+            window.dispatchEvent(new CustomEvent('datasync'));
+        }
         
         // --- End Optimistic Update ---
 

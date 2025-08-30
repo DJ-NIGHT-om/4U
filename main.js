@@ -35,7 +35,7 @@
         /* @tweakable The font weight for the alert/confirmation modal message text. */
         const modalMessageFontWeight = "bold";
 
-        /* @tweakable The duration in minutes for which the first playlist message is shown after creation. */
+        /* @tweakable The duration in minutes for which the first playlist message is shown after creation. The message will disappear after this time. */
         const firstPlaylistMessageDurationMinutes = 60;
 
         document.documentElement.style.setProperty('--modal-max-width', modalMaxWidth);
@@ -218,14 +218,27 @@
 
                 const currentTime = new Date().getTime();
                 const timeElapsed = currentTime - parseInt(creationTime, 10);
+                /* @tweakable The duration in minutes for the welcome message to be visible. */
                 const durationMs = firstPlaylistMessageDurationMinutes * 60 * 1000;
 
-                const shouldBeVisible = timeElapsed < durationMs;
+                const hasExpired = timeElapsed >= durationMs;
+
+                if (hasExpired && window.expireWelcomeMessagePermanently) {
+                    // If the message has expired and we should make it permanent,
+                    // we can remove the creation time from local storage.
+                    // This will prevent the message from ever showing again.
+                    localStorage.removeItem('firstPlaylistCreationTime');
+                    localStorage.removeItem('firstPlaylistWhatsappLink');
+                    firstPlaylistMessage.classList.add('hidden');
+                    return;
+                }
+                
+                const shouldBeVisible = !hasExpired;
                 firstPlaylistMessage.classList.toggle('hidden', !shouldBeVisible);
 
                 if (shouldBeVisible) {
                     /* @tweakable The confirmation text before the WhatsApp link for the first playlist. */
-                    const confirmationText = 'تهانينا .. لقد تم إنشاء قائمة المناسبة بنجاح ، سيتم تلبية طلباتكم ، يرجى التواصل معنا ';
+                    const confirmationText = 'تهانينا .. لقد تم إنشاء قائمة المناسبة بنجاح ، سيتم تلبية طلباتكم ، يرجى التواصل معنا';
                     firstPlaylistMessageText.innerHTML = `${confirmationText} <a href="${whatsappLink}" target="_blank">واتساب</a>`;
                 }
             }
@@ -284,6 +297,8 @@
 
         // Add a listener to update the message visibility whenever data is synced
         window.addEventListener('datasync', updateFirstPlaylistMessageVisibility);
+        // Set an interval to check the message visibility every second
+        setInterval(updateFirstPlaylistMessageVisibility, 1000);
         // Add a listener to update the admin's playlist count display
         if (isAdmin) {
             window.addEventListener('datasync', updateUserDisplay);

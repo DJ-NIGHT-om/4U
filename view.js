@@ -111,21 +111,21 @@
         card.innerHTML =
             creatorInfoHtml +
             '<div class="playlist-card-header">' +
-                '<h3><i class="fas fa-map-marker-alt icon"></i> <span class="location-text">' + (playlist.location || 'مكان غير محدد') + '</span></h3>' +
-                '<span><i class="fas fa-calendar-alt icon"></i> <span class="date-text">' + dateString +
-                (dayName ? ' <span class="day-name">' + dayName + '</span>' : '') + '</span></span>' +
+                '<h3><i class="fas fa-map-marker-alt icon"></i> <span class="highlightable-text"><span class="location-text">' + (playlist.location || 'مكان غير محدد') + '</span></span></h3>' +
+                '<span><i class="fas fa-calendar-alt icon"></i> <span class="highlightable-text"><span class="date-text">' + dateString +
+                (dayName ? ' <span class="day-name">' + dayName + '</span>' : '') + '</span></span></span>' +
             '</div>' +
             '<div class="playlist-card-info">' +
-                '<p><i class="fas fa-phone icon"></i> <strong>رقم الهاتف:</strong> <span class="phone-text">' + (playlist.phoneNumber || 'غير محدد') + '</span></p>' +
-                '<p><i class="fas fa-female icon"></i> <strong>زفة العروس:</strong> <span class="bride-zaffa-text">' + (playlist.brideZaffa || 'غير محدد') + '</span></p>' +
-                '<p><i class="fas fa-male icon"></i> <strong>زفة المعرس:</strong> <span class="groom-zaffa-text">' + (playlist.groomZaffa || 'غير محدد') + '</span></p>' +
+                '<p><i class="fas fa-phone icon"></i> <span class="highlightable-text"><strong>رقم الهاتف:</strong> <span class="phone-text">' + (playlist.phoneNumber || 'غير محدد') + '</span></span></p>' +
+                '<p><i class="fas fa-female icon"></i> <span class="highlightable-text"><strong>زفة العروس:</strong> <span class="bride-zaffa-text">' + (playlist.brideZaffa || 'غير محدد') + '</span></span></p>' +
+                '<p><i class="fas fa-male icon"></i> <span class="highlightable-text"><strong>زفة المعرس:</strong> <span class="groom-zaffa-text">' + (playlist.groomZaffa || 'غير محدد') + '</span></span></p>' +
             '</div>' +
             '<div class="playlist-songs">' +
                 '<h4><i class="fas fa-music icon"></i>' + (isArchived ? 'قائمة الأغاني:' : 'الأغاني المطلوبة :') + '</h4>' +
                 '<div class="songs-content">' + songsHtml + '</div>' +
             '</div>' +
             '<div class="playlist-notes">' +
-                '<h4><i class="fas fa-sticky-note icon"></i> ملاحظات:</h4>' +
+                '<h4><i class="fas fa-sticky-note icon"></i> <span class="highlightable-text">ملاحظات:</span></h4>' +
                 '<p class="notes-content">' + notesText + '</p>' +
             '</div>' +
             '<div class="playlist-actions">' +

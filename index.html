@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <link rel="icon" href="logo1.png" type="image/png">
@@ -168,6 +167,8 @@
         const sendOnlyChangedFields = true;
         /* @tweakable If true, the welcome message is removed when the user's last playlist is deleted. */
         const removeWelcomeOnLastDelete = true;
+        /* @tweakable If true, the welcome message for the first playlist will never be shown again after it expires. */
+        const expireWelcomeMessagePermanently = true;
         if (preventContextMenu) {
             document.addEventListener('contextmenu', e => e.preventDefault());
         }
