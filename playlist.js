@@ -10,8 +10,7 @@
         e.preventDefault();
         var currentUser = localStorage.getItem('currentUser');
         var currentUserPassword = localStorage.getItem('currentUserPassword');
-        var isAdmin = localStorage.getItem('isAdmin') === 'true';
-        if (!currentUser) return;
+        if (!currentUser || !currentUserPassword) return;
 
         var dom = window.getDOMElements();
         
@@ -39,153 +38,79 @@
         var isEdit = playlistId && playlistId.trim() !== '';
 
         // Check if this is the first playlist being added by this user
-        const isFirstPlaylist = !isEdit && !isAdmin && window.getAllPlaylists().length === 0;
+        const isFirstPlaylist = !isEdit && window.getAllPlaylists().length === 0;
 
-        var playlistData;
-        var apiPayload;
-        
-        /* @tweakable Prepending notes with a special character (like a quote) forces Google Sheets to treat it as plain text, preventing unwanted auto-formatting of dates or numbers. */
-        const forceNotesAsStringInSheet = true;
-        let notesValue = dom.notesInput.value;
-        if (forceNotesAsStringInSheet && notesValue) {
-            notesValue = "'" + notesValue;
-        }
-        
-        // --- Optimistic Update ---
-        if (isEdit) {
-            let originalPlaylist = window.getAllSheetData().find(p => p.id == playlistId);
-            if (!originalPlaylist) {
-                console.error("Original playlist not found for edit");
-                window.showAlert("حدث خطأ: لم يتم العثور على القائمة الأصلية للتعديل.");
-                return;
-            }
-
-            playlistData = {
-                id: playlistId,
-                date: dom.eventDateInput.value,
-                location: dom.eventLocationInput.value,
-                phoneNumber: dom.phoneNumberInput.value,
-                brideZaffa: dom.brideZaffaInput.value,
-                groomZaffa: dom.groomZaffaInput.value,
-                songs: songs,
-                notes: dom.notesInput.value, // Keep original notes for UI
-                username: originalPlaylist.username,
-                password: originalPlaylist.password
-            };
-
-            /* @tweakable This is now controlled from index.html */
-            let changes = {};
-            if (window.sendOnlyChangedFields) {
-                // To reliably compare, we need to handle cases where songs might be a string or an array
-                let originalSongs = [];
-                try {
-                    if (Array.isArray(originalPlaylist.songs)) {
-                        originalSongs = originalPlaylist.songs;
-                    } else if (typeof originalPlaylist.songs === 'string') {
-                        originalSongs = JSON.parse(originalPlaylist.songs);
-                    }
-                } catch (e) { /* default to empty array */ }
-
-                if (playlistData.date !== originalPlaylist.date) changes.date = playlistData.date;
-                if (playlistData.location !== originalPlaylist.location) changes.location = playlistData.location;
-                if (playlistData.phoneNumber !== originalPlaylist.phoneNumber) changes.phoneNumber = playlistData.phoneNumber;
-                if (playlistData.brideZaffa !== originalPlaylist.brideZaffa) changes.brideZaffa = playlistData.brideZaffa;
-                if (playlistData.groomZaffa !== originalPlaylist.groomZaffa) changes.groomZaffa = playlistData.groomZaffa;
-                if (dom.notesInput.value !== originalPlaylist.notes) changes.notes = notesValue; // Send formatted notes
-                if (JSON.stringify(playlistData.songs) !== JSON.stringify(originalSongs)) changes.songs = playlistData.songs;
-            }
-
-            apiPayload = {
-                action: 'edit',
-                id: playlistId,
-                changes: changes,
-                forceNotesAsString: false, // The logic is now handled on the client
-                 // Also send full data for backend fallback
-                ...playlistData,
-                notes: notesValue // Ensure payload has formatted notes
-            };
-            
-            // If no changes were made, don't send to server, just close the form.
-            if (window.sendOnlyChangedFields && Object.keys(changes).length === 0) {
-                 window.resetForm();
-                 return;
-            }
-
-        } else {
-             // Admin should not be able to create new playlists from this form
-            if (isAdmin) {
-                window.showAlert('لا يمكن للمدير إنشاء قوائم جديدة من هذه الواجهة.');
-                return;
-            }
-            playlistData = {
-                date: dom.eventDateInput.value,
-                location: dom.eventLocationInput.value,
-                phoneNumber: dom.phoneNumberInput.value,
-                brideZaffa: dom.brideZaffaInput.value,
-                groomZaffa: dom.groomZaffaInput.value,
-                songs: songs,
-                notes: dom.notesInput.value, // Keep original notes for UI
-                username: currentUser,
-                password: currentUserPassword || '' // Ensure password exists
-            };
-            apiPayload = { 
-                ...playlistData, 
-                action: 'add', 
-                notes: notesValue, // Send formatted notes
-                forceNotesAsString: false // The logic is now handled on the client
-            };
-        }
+        var playlistData = {
+            date: dom.eventDateInput.value,
+            location: dom.eventLocationInput.value,
+            phoneNumber: dom.phoneNumberInput.value,
+            brideZaffa: dom.brideZaffaInput.value,
+            groomZaffa: dom.groomZaffaInput.value,
+            songs: songs,
+            notes: dom.notesInput.value,
+            username: currentUser,
+            password: currentUserPassword
+        };
         
         var playlists = window.getAllPlaylists();
         var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
         var newOrUpdatedPlaylist;
 
-        // --- Optimistic UI Update ---
+        // --- Optimistic Update ---
         if (isEdit) {
+            playlistData.id = playlistId;
+            let found = false;
             newOrUpdatedPlaylist = { ...playlistData };
-            playlists = playlists.map(p => p.id.toString() === playlistId.toString() ? newOrUpdatedPlaylist : p);
+            playlists = playlists.map(p => {
+                if (p.id.toString() === playlistId.toString()) {
+                    found = true;
+                    return newOrUpdatedPlaylist;
+                }
+                return p;
+            });
+            if (!found) playlists.push(newOrUpdatedPlaylist);
         } else {
             playlistId = new Date().getTime().toString();
             playlistData.id = playlistId;
-            apiPayload.id = playlistId;
             newOrUpdatedPlaylist = { ...playlistData };
             playlists.push(newOrUpdatedPlaylist);
         }
         
         // Immediately update the UI
-        window.updateLocalPlaylists(playlists, newOrUpdatedPlaylist);
+        window.updateLocalPlaylists(playlists);
         window.resetForm();
 
         // Show confetti for the first playlist
-        // Show confetti and create WhatsApp link for the first playlist
-// OR update WhatsApp link when editing any playlist
-if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length > 0) {
-   localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
-    /* @tweakable The WhatsApp number to send the first playlist details to. */
-    const whatsappNumber = '96899383859';
-    /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
-    const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
-    
-    const message = whatsappMessageTemplate
-        .replace('{date}', playlistData.date)
-        .replace('{location}', playlistData.location)
-        .replace('{brideZaffa}', playlistData.brideZaffa)
-        .replace('{groomZaffa}', playlistData.groomZaffa);
-    
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
-    localStorage.setItem('firstPlaylistWhatsappLink', whatsappUrl);
+     if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length > 0) {
+           localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
+            /* @tweakable The WhatsApp number to send the first playlist details to. */
+            const whatsappNumber = '99383859';
+            /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
+            const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
+            
+            const message = whatsappMessageTemplate
+                .replace('{date}', playlistData.date)
+                .replace('{location}', playlistData.location)
+                .replace('{brideZaffa}', playlistData.brideZaffa)
+                .replace('{groomZaffa}', playlistData.groomZaffa);
+            
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+            localStorage.setItem('firstPlaylistWhatsappLink', whatsappUrl);
 
-   // Only show confetti for the first creation, not for edits
-   if (isFirstPlaylist) {
-      if (window.triggerWelcomeConfetti) {
-         window.triggerWelcomeConfetti();
-      }
-      // Manually dispatch event since sync isn't called immediately - ONLY for first creation
-      window.dispatchEvent(new CustomEvent('datasync'));
-   }
-}
+           if (window.triggerWelcomeConfetti) {
+              window.triggerWelcomeConfetti();
+           }
+           // Manually dispatch event since sync isn't called immediately
+           window.dispatchEvent(new CustomEvent('datasync'));
+        }
         
         // --- End Optimistic Update ---
+
+        var apiPayload = {
+            ...playlistData,
+            action: isEdit ? 'edit' : 'add',
+            songs: playlistData.songs, // Ensure songs are sent as an array
+        };
 
         window.postDataToSheet(apiPayload)
             .then(function(result) {
@@ -214,35 +139,29 @@ if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length
         if (!card) return;
 
         var playlistId = card.getAttribute('data-id');
-        var isAdmin = localStorage.getItem('isAdmin') === 'true';
         var isDeleteButton = e.target.closest('.delete-btn');
         var isEditButton = e.target.closest('.edit-btn');
 
         if (isDeleteButton) {
-            /* @tweakable Setting to false will cause the item to be removed from the list instantly, without animation. */
-            const useDeleteAnimation = false;
-            /* @tweakable The duration in milliseconds for the delete animation, if enabled. */
+            /* @tweakable The duration in milliseconds for the delete animation. Should match the CSS animation time. */
             const deleteAnimationDuration = 300;
-
+            
             window.showConfirm('هل أنت متأكد من حذف هذه القائمة؟')
                 .then(function(confirmed) {
                     if (confirmed) {
+                        // --- Animate then Optimistically Update ---
                         var playlists = window.getAllPlaylists();
                         var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
-
-                        // This function contains the logic to remove the item and sync with the server
-                        const performDelete = () => {
-                            // Check if this is the last playlist and remove the welcome message if so
-                            if (window.removeWelcomeOnLastDelete && !isAdmin && playlists.length === 1) {
-                                localStorage.removeItem('firstPlaylistCreationTime');
-                                localStorage.removeItem('firstPlaylistWhatsappLink');
-                                // Dispatch event to immediately hide the welcome message
-                                window.dispatchEvent(new CustomEvent('datasync'));
-                            }
-                            
+                        
+                        // 1. Add animation class
+                        card.classList.add('deleting');
+                        
+                        // 2. After animation, update data and UI
+                        setTimeout(() => {
                             var updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
                             window.updateLocalPlaylists(updatedPlaylists);
 
+                            // 3. Send delete request to server in the background
                             window.postDataToSheet({ action: 'delete', id: playlistId })
                                 .then(function(result) {
                                     if (result && result.status === 'success') {
@@ -254,18 +173,10 @@ if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length
                                 .catch(function(error) {
                                     console.error('Error deleting playlist, reverting UI:', error);
                                     window.showAlert('حدث خطأ أثناء حذف القائمة. سيتم استعادة القائمة.');
-                                    window.updateLocalPlaylists(oldPlaylists); // Revert UI
+                                    // Revert UI to previous state
+                                    window.updateLocalPlaylists(oldPlaylists);
                                 });
-                        };
-
-                        if (useDeleteAnimation) {
-                            // --- Animate then Optimistically Update ---
-                            card.classList.add('deleting');
-                            setTimeout(performDelete, deleteAnimationDuration);
-                        } else {
-                            // --- Optimistically Update Instantly ---
-                            performDelete();
-                        }
+                        }, deleteAnimationDuration);
                     }
                 });
         } else if (isEditButton) {
