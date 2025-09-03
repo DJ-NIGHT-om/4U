@@ -1,4 +1,35 @@
-// Global API functions for browser compatibility
+/**
+ * Performs an immediate sync with the server to get latest data
+ * @returns {Promise<Array>} A promise that resolves to the latest playlists data
+ */
+function syncDataImmediately() {
+    return fetchPlaylistsFromSheet()
+        .then(function(data) {
+            // Update local storage with fresh data
+            localStorage.setItem('sheet_playlists_cache_v2', JSON.stringify(data));
+            localStorage.setItem('sheet_playlists_cache_time_v2', String(Date.now()));
+            
+            // Update UI immediately
+            if (typeof window.updateLocalPlaylists === 'function') {
+                window.updateLocalPlaylists(data);
+            }
+            
+            return data;
+        })
+        .catch(function(error) {
+            console.error('Immediate sync failed:', error);
+            // Fall back to cached data if sync fails
+            const cachedData = JSON.parse(localStorage.getItem('sheet_playlists_cache_v2') || '[]');
+            return cachedData;
+        });
+}
+
+// Make function globally accessible
+window.syncDataImmediately = syncDataImmediately;
+
+
+
+
 (function() {
     'use strict';
     

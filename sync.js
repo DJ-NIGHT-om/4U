@@ -2,17 +2,24 @@
 (function() {
     'use strict';
     
-    /* @tweakable The delay in milliseconds between each background data sync. 120000ms = 3 minutes. */
-    const syncFrequency = 10000;
+    /* @tweakable The delay in milliseconds between each background data sync. 12000ms = 12 seconds. */
+    const syncFrequency = 12000;
     var syncInterval;
     var allPlaylists = [];
     var allSheetData = []; // To store all data from the sheet for date checking
     var lastSyncTime = 0;
+    /* @tweakable If true, the background sync will be paused while an add/edit/delete operation is in progress to prevent race conditions. */
+    let isSyncPaused = false;
 
     /**
      * Syncs data from Google Sheets and updates both main page and archive (user-specific)
      */
     function syncDataFromSheet() {
+        if (isSyncPaused) {
+            console.log("Sync is paused due to an ongoing user action.");
+            return Promise.resolve();
+        }
+
         var currentUser = localStorage.getItem('currentUser');
         var isAdmin = localStorage.getItem('isAdmin') === 'true';
         if (!currentUser) return Promise.resolve();
@@ -173,6 +180,25 @@
     }
 
     /**
+     * Pauses or resumes the background sync.
+     * @param {boolean} pause - True to pause, false to resume.
+     * @param {number} [resumeAfterMs=0] - If resuming, this is the delay before it restarts.
+     */
+    function setSyncPaused(pause, resumeAfterMs = 0) {
+        isSyncPaused = pause;
+        if (!pause) {
+            console.log(`Resuming sync in ${resumeAfterMs}ms.`);
+            // When resuming, restart the sync interval after a short delay.
+            stopRealTimeSync();
+            setTimeout(startRealTimeSync, resumeAfterMs);
+        } else {
+            console.log("Sync paused.");
+            // When pausing, stop it immediately.
+            stopRealTimeSync();
+        }
+    }
+
+    /**
      * Fetches playlists, separates current from archived, displays current ones,
      * and archives the old ones (user-specific).
      */
@@ -288,4 +314,5 @@
     window.getAllPlaylists = getAllPlaylists;
     window.getAllSheetData = getAllSheetData;
     window.updateLocalPlaylists = updateLocalPlaylists;
+    window.setSyncPaused = setSyncPaused;
 })();

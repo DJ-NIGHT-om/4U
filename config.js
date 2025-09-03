@@ -19,10 +19,9 @@ var GAS_URL_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzudjhmypRnjrsqA
 
 // Make it globally accessible
 window.GAS_URL_ENDPOINT = GAS_URL_ENDPOINT;
-window.APP_TIMEZONE_OFFSET_HOURS = 4;
 
-/* @tweakable Prepending a single quote to notes prevents Google Sheets from auto-formatting text that looks like a date. */
-window.forceNotesAsString = true;
+/* @tweakable The timezone offset from UTC in hours for all date operations. For GMT+5, this value should be 5. */
+window.APP_TIMEZONE_OFFSET_HOURS = 5;
 
 /* --- GOOGLE_APPS_SCRIPT_CODE --- (الصق هذا في محرر Apps Script)
 const SHEET_NAME = 'Sheet1'; // Or your sheet's name
@@ -139,62 +138,7 @@ function doPost(e) {
         }
         return ContentService.createTextOutput(JSON.stringify({status: 'success', message: `${deletedCount} rows archived.`})).setMimeType(ContentService.MimeType.JSON);
         
-    } else if (data.action === 'edit') {
-        const rowData = {
-            id: data.id,
-            date: data.date,
-            location: data.location,
-            phoneNumber: data.phoneNumber,
-            brideZaffa: data.brideZaffa,
-            groomZaffa: data.groomZaffa,
-            songs: JSON.stringify(data.songs || []),
-            notes: data.notes || '',
-            username: data.username || '',
-            password: data.password || ''
-        };
-
-        const idColumn = sheet.getRange("A:A").getValues();
-        let rowToUpdate = -1;
-        for (let i = 1; i < idColumn.length; i++) {
-            if (idColumn[i][0] == data.id) {
-               rowToUpdate = i + 1;
-               break;
-            }
-        }
-        if (rowToUpdate !== -1) {
-            if (data.changes && Object.keys(data.changes).length > 0) {
-                 // Partial update logic
-                 Object.keys(data.changes).forEach(key => {
-                     const colIndex = headers.indexOf(key);
-                     if (colIndex !== -1) {
-                         let value = data.changes[key];
-                         if (key === 'songs') {
-                           value = JSON.stringify(value || []);
-                         }
-                         if (data.forceNotesAsString && key === 'notes' && typeof value === 'string' && value.length > 0) {
-                             value = "'" + value;
-                         }
-                         sheet.getRange(rowToUpdate, colIndex + 1).setValue(value);
-                     }
-                 });
-                 return ContentService.createTextOutput(JSON.stringify({status: 'success', message: 'Partial update successful'})).setMimeType(ContentService.MimeType.JSON);
-            } else {
-                 // Fallback to full row update if 'changes' is not provided
-                 const fullRowAsArray = headers.map(header => {
-                    let value = rowData[header];
-                    if (data.forceNotesAsString && header === 'notes' && typeof value === 'string' && value.length > 0) {
-                        return "'" + value;
-                    }
-                    return value;
-                 });
-                 sheet.getRange(rowToUpdate, 1, 1, fullRowAsArray.length).setValues([fullRowAsArray]);
-                 return ContentService.createTextOutput(JSON.stringify({status: 'success', data: rowData})).setMimeType(ContentService.MimeType.JSON);
-            }
-        } else {
-            return ContentService.createTextOutput(JSON.stringify({status: 'error', message: 'ID not found for update'})).setMimeType(ContentService.MimeType.JSON);
-        }
-
-    } else if (data.action === 'add') { // Kept 'add' separate
+    } else if (data.action === 'add' || data.action === 'edit') {
         const rowData = {
             id: data.id || new Date().getTime().toString(),
             date: data.date,
@@ -208,15 +152,27 @@ function doPost(e) {
             password: data.password || ''
         };
 
-        const rowAsArray = headers.map(header => {
-            let value = rowData[header];
-            if (data.forceNotesAsString && header === 'notes' && typeof value === 'string' && value.length > 0) {
-                return "'" + value;
-            }
-            return value;
-        });
-        sheet.appendRow(rowAsArray);
-        return ContentService.createTextOutput(JSON.stringify({status: 'success', data: rowData})).setMimeType(ContentService.MimeType.JSON);
+        const rowAsArray = headers.map(header => rowData[header]);
+
+        if (data.action === 'edit') {
+             const idColumn = sheet.getRange("A:A").getValues();
+             let rowToUpdate = -1;
+             for (let i = 1; i < idColumn.length; i++) {
+                if (idColumn[i][0] == data.id) {
+                   rowToUpdate = i + 1;
+                   break;
+                }
+             }
+             if(rowToUpdate !== -1) {
+                sheet.getRange(rowToUpdate, 1, 1, rowAsArray.length).setValues([rowAsArray]);
+                return ContentService.createTextOutput(JSON.stringify({status: 'success', data: rowData})).setMimeType(ContentService.MimeType.JSON);
+             } else {
+                return ContentService.createTextOutput(JSON.stringify({status: 'error', message: 'ID not found for update'})).setMimeType(ContentService.MimeType.JSON);
+             }
+        } else { // add
+            sheet.appendRow(rowAsArray);
+            return ContentService.createTextOutput(JSON.stringify({status: 'success', data: rowData})).setMimeType(ContentService.MimeType.JSON);
+        }
     }
 
   } catch (error) {

@@ -31,9 +31,6 @@
         var cancelResetBtn = document.getElementById('cancel-reset');
         var loadingOverlay = document.getElementById('loading-overlay');
         
-        /* @tweakable If true, a loading indicator will show while authenticating. Set to false for instant redirects on success. */
-        const showLoadingOnAuth = false;
-
         var loginAttempts = 0;
         var maxLoginAttempts = 3;
 
@@ -107,6 +104,7 @@
 
                 // Admin login check
                 if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+                    window.showLoading(true);
                     localStorage.setItem('currentUser', username);
                     localStorage.setItem('currentUserPassword', password);
                     localStorage.setItem('isAdmin', 'true');
@@ -114,9 +112,7 @@
                     return;
                 }
 
-                if (showLoadingOnAuth) {
-                    window.showLoading(true);
-                }
+                window.showLoading(true);
                 
                 authenticateUser(username, password)
                     .then(function(result) {
@@ -126,7 +122,6 @@
                             localStorage.removeItem('isAdmin'); // Ensure not set for regular users
                             window.location.href = 'index.html';
                         } else {
-                            if (showLoadingOnAuth) window.showLoading(false);
                             loginAttempts++;
                             if (loginAttempts >= maxLoginAttempts) {
                                 window.showAlert('تم تجاوز عدد المحاولات المسموح. يرجى إعادة تعيين كلمة المرور.');
@@ -137,7 +132,6 @@
                         }
                     })
                     .catch(function(error) {
-                        if (showLoadingOnAuth) window.showLoading(false);
                         console.error('Login error:', error);
                         window.showAlert('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.');
                     })
@@ -178,24 +172,22 @@
                     return;
                 }
 
-                if (showLoadingOnAuth) {
-                    window.showLoading(true);
-                }
+                window.showLoading(true);
                 
                 registerUser(username, password)
                     .then(function(result) {
                         if (result.status === 'success') {
                             localStorage.setItem('currentUser', username);
                             localStorage.setItem('currentUserPassword', password);
-                            // No alert needed, just redirect
-                            window.location.href = 'index.html';
+                            window.showAlert('تم إنشاء الحساب بنجاح! سيتم توجيهك إلى الصفحة الرئيسية.')
+                                .then(function() {
+                                    window.location.href = 'index.html';
+                                });
                         } else {
-                            if (showLoadingOnAuth) window.showLoading(false);
                             window.showAlert(result.message || 'حدث خطأ أثناء إنشاء الحساب');
                         }
                     })
                     .catch(function(error) {
-                        if (showLoadingOnAuth) window.showLoading(false);
                         console.error('Registration error:', error);
                         window.showAlert('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.');
                     })
@@ -229,9 +221,7 @@
                     return;
                 }
 
-                if (showLoadingOnAuth) {
-                    window.showLoading(true);
-                }
+                window.showLoading(true);
                 
                 resetPassword(username, newPassword)
                     .then(function(result) {
@@ -242,12 +232,10 @@
                             resetForm.reset();
                             loginAttempts = 0;
                         } else {
-                            if (showLoadingOnAuth) window.showLoading(false);
                             window.showAlert(result.message || 'حدث خطأ أثناء إعادة تعيين كلمة المرور');
                         }
                     })
                     .catch(function(error) {
-                        if (showLoadingOnAuth) window.showLoading(false);
                         console.error('Reset password error:', error);
                         window.showAlert('حدث خطأ أثناء إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.');
                     })

@@ -342,6 +342,15 @@
             if (Array.isArray(updatedListFromServer)) {
                 localStorage.setItem('sheet_playlists_cache_v2', JSON.stringify(updatedListFromServer));
                 localStorage.setItem('sheet_playlists_cache_time_v2', String(Date.now()));
+
+                // --- ✅ تحقق إن كان هذا أول إدخال ---
+                const alreadySet = localStorage.getItem('firstPlaylistCreationTime');
+if (!alreadySet && updatedListFromServer.length === 1) {
+    localStorage.setItem('firstPlaylistCreationTime', String(Date.now()));
+    localStorage.setItem('firstPlaylistWhatsappLink', 'https://wa.me/968XXXXXXXX'); // ضع رقمك هنا
+    localStorage.setItem('firstPlaylistCreated', 'true'); 
+    localStorage.setItem('firstPlaylistMessageShown', 'false'); // ✅ أول مرة لم تُعرض بعد
+}
             }
         } catch {}
         if (typeof window.updateLocalPlaylists === 'function') {

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'party-planner-v3'; // Incremented cache version
+const CACHE_NAME = 'party-planner-v2';
 const urlsToCache = [
   './',
   './index.html',
@@ -13,10 +13,10 @@ const urlsToCache = [
   './view.js',
   './modal.js',
   './main.css',
-  './buttons.css', // Added
-  './card.css', // Added
-  './form.css', // Added
-  './modal.css', // Added
+  './button.css',
+  './card.css',
+  './form.css',
+  './modal.css',
   './pages.css',
   './playlist.js',
   './sync.js',

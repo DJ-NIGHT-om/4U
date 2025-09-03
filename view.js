@@ -111,21 +111,21 @@
         card.innerHTML =
             creatorInfoHtml +
             '<div class="playlist-card-header">' +
-                '<h3><i class="fas fa-map-marker-alt icon"></i> <span class="highlightable-text"><span class="location-text">' + (playlist.location || 'مكان غير محدد') + '</span></span></h3>' +
-                '<span><i class="fas fa-calendar-alt icon"></i> <span class="highlightable-text"><span class="date-text">' + dateString +
-                (dayName ? ' <span class="day-name">' + dayName + '</span>' : '') + '</span></span></span>' +
+                '<h3><i class="fas fa-map-marker-alt icon"></i> <span class="location-text">' + (playlist.location || 'مكان غير محدد') + '</span></h3>' +
+                '<span><i class="fas fa-calendar-alt icon"></i> <span class="date-text">' + dateString +
+                (dayName ? ' <span class="day-name">' + dayName + '</span>' : '') + '</span></span>' +
             '</div>' +
             '<div class="playlist-card-info">' +
-                '<p><i class="fas fa-phone icon"></i> <span class="highlightable-text"><strong>رقم الهاتف:</strong> <span class="phone-text">' + (playlist.phoneNumber || 'غير محدد') + '</span></span></p>' +
-                '<p><i class="fas fa-female icon"></i> <span class="highlightable-text"><strong>زفة العروس:</strong> <span class="bride-zaffa-text">' + (playlist.brideZaffa || 'غير محدد') + '</span></span></p>' +
-                '<p><i class="fas fa-male icon"></i> <span class="highlightable-text"><strong>زفة المعرس:</strong> <span class="groom-zaffa-text">' + (playlist.groomZaffa || 'غير محدد') + '</span></span></p>' +
+                '<p><i class="fas fa-phone icon"></i> <strong>رقم الهاتف:</strong> <span class="phone-text">' + (playlist.phoneNumber || 'غير محدد') + '</span></p>' +
+                '<p><i class="fas fa-female icon"></i> <strong>زفة العروس:</strong> <span class="bride-zaffa-text">' + (playlist.brideZaffa || 'غير محدد') + '</span></p>' +
+                '<p><i class="fas fa-male icon"></i> <strong>زفة المعرس:</strong> <span class="groom-zaffa-text">' + (playlist.groomZaffa || 'غير محدد') + '</span></p>' +
             '</div>' +
             '<div class="playlist-songs">' +
                 '<h4><i class="fas fa-music icon"></i>' + (isArchived ? 'قائمة الأغاني:' : 'الأغاني المطلوبة :') + '</h4>' +
                 '<div class="songs-content">' + songsHtml + '</div>' +
             '</div>' +
             '<div class="playlist-notes">' +
-                '<h4><i class="fas fa-sticky-note icon"></i> <span class="highlightable-text">ملاحظات:</span></h4>' +
+                '<h4><i class="fas fa-sticky-note icon"></i> ملاحظات:</h4>' +
                 '<p class="notes-content">' + notesText + '</p>' +
             '</div>' +
             '<div class="playlist-actions">' +
@@ -193,7 +193,7 @@
     function renderOrUpdatePlaylistCard(playlist) {
         const container = window.getDOMElements().playlistSection;
         if (!container) return;
-
+    
         const existingCard = container.querySelector(`.playlist-card[data-id="${playlist.id}"]`);
         
         if (existingCard) {
@@ -207,20 +207,31 @@
         } else {
             // If it's a new card, create it
             const newCard = createPlaylistCard(playlist, false);
+            
             // Find its correct sorted position and insert it
-            const allPlaylists = window.getAllPlaylists();
+            const allPlaylists = window.getAllPlaylists(); // This now includes the new one
             const playlistIndex = allPlaylists.findIndex(p => p.id === playlist.id);
-            const cards = container.querySelectorAll('.playlist-card');
-            if (playlistIndex !== -1 && cards[playlistIndex]) {
-                container.insertBefore(newCard, cards[playlistIndex]);
-            } else {
-                container.appendChild(newCard); // Fallback to appending at the end
+            const cards = Array.from(container.querySelectorAll('.playlist-card'));
+    
+            // Find the ID of the card that should be *after* our new card
+            let nextCardId = null;
+            if (playlistIndex < allPlaylists.length - 1) {
+                nextCardId = allPlaylists[playlistIndex + 1].id;
             }
+    
+            const nextCardElement = nextCardId ? container.querySelector(`.playlist-card[data-id="${nextCardId}"]`) : null;
+    
+            if (nextCardElement) {
+                container.insertBefore(newCard, nextCardElement);
+            } else {
+                container.appendChild(newCard); // Append at the end if it's the latest date
+            }
+    
             // Highlight the new card
             newCard.classList.add('edited');
             setTimeout(() => {
                 if (newCard) newCard.classList.remove('edited');
-            }, window.cardHighlightDuration || 1500);
+            }, window.newCardHighlightDuration || 2500);
         }
     }
 
