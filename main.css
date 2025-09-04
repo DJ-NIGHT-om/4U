@@ -250,13 +250,6 @@ footer {
     /* @tweakable The font size for the first playlist creation message. */
     font-size: 1.1rem;
     animation: fadeIn 0.5s ease-out;
-    font-weight: bold;
-}
-
-.first-playlist-message a {
-    color: #0056b3;
-    text-decoration: underline;
-    font-weight: bold;
 }
 
 @keyframes fadeIn {

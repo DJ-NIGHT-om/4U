@@ -2,19 +2,30 @@
 (function() {
     'use strict';
     
+    // A cache for DOM elements to avoid repeated lookups
     var dom = {};
-    var loadingTimeout;
-    var isLoadingBlocked = false; // Flag to prevent re-entrant calls
 
+    /**
+     * Gets the Arabic day name for a given date
+     * @param {Date} date - The date object
+     * @returns {string} The Arabic day name
+     */
     function getArabicDayName(date) {
         var dayNames = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
         return dayNames[date.getDay()];
     }
 
+    /**
+     * Gets a Date object representing the start of "today" in the application's configured timezone.
+     * This ensures date comparisons are consistent for all users.
+     * @returns {Date} A date object for the start of the current day in the app's timezone.
+     */
     function getAppToday() {
         const now = new Date();
-        const appNow = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (4 * 3600000)); // GMT+4
-        appNow.setUTCHours(0, 0, 0, 0);
+        // Create a UTC date based on the current time, then apply the app's timezone offset.
+        // This correctly calculates the current date in the target timezone.
+        const appNow = new Date(now.valueOf() + (window.APP_TIMEZONE_OFFSET_HOURS * 60 - (-now.getTimezoneOffset())) * 60000);
+        appNow.setUTCHours(0, 0, 0, 0); // Set to the beginning of the day in UTC, which reflects the app's timezone date
         return appNow;
     }
 
@@ -50,33 +61,13 @@
 
     /**
      * Shows or hides the loading overlay.
-     * When showing, it automatically hides after a set duration.
-     * @param {boolean} show - `true` to show, `false` to hide immediately.
+     * @param {boolean} show - `true` to show, `false` to hide.
      */
     function showLoading(show) {
-        if (isLoadingBlocked) return; // Prevent re-entrant calls, especially for reload loops
-
-        if (window.refreshPageOnUpdate) {
-            if (show) {
-                isLoadingBlocked = true; // Set flag to block further calls
-                window.location.reload();
-            }
-            return;
-        }
-        
-        /* @tweakable The maximum time in milliseconds the 'Loading...' screen will be visible. */
-        const loadingScreenMaxDuration = 1000;
-
         var loadingOverlay = getDOMElements().loadingOverlay;
         if (loadingOverlay) {
-            clearTimeout(loadingTimeout); // Clear any existing timeout
-
             if (show) {
                 loadingOverlay.classList.remove('hidden');
-                // Set a timeout to hide the overlay automatically
-                loadingTimeout = setTimeout(function() {
-                    loadingOverlay.classList.add('hidden');
-                }, loadingScreenMaxDuration);
             } else {
                 loadingOverlay.classList.add('hidden');
             }

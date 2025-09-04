@@ -10,7 +10,8 @@
         e.preventDefault();
         var currentUser = localStorage.getItem('currentUser');
         var currentUserPassword = localStorage.getItem('currentUserPassword');
-        if (!currentUser || !currentUserPassword) return;
+        var isAdmin = localStorage.getItem('isAdmin') === 'true';
+        if (!currentUser) return;
 
         var dom = window.getDOMElements();
         
@@ -38,19 +39,44 @@
         var isEdit = playlistId && playlistId.trim() !== '';
 
         // Check if this is the first playlist being added by this user
-        const isFirstPlaylist = !isEdit && window.getAllPlaylists().length === 0;
+        const isFirstPlaylist = !isEdit && !isAdmin && window.getAllPlaylists().length === 0;
 
-        var playlistData = {
-            date: dom.eventDateInput.value,
-            location: dom.eventLocationInput.value,
-            phoneNumber: dom.phoneNumberInput.value,
-            brideZaffa: dom.brideZaffaInput.value,
-            groomZaffa: dom.groomZaffaInput.value,
-            songs: songs,
-            notes: dom.notesInput.value,
-            username: currentUser,
-            password: currentUserPassword
-        };
+        var playlistData;
+        
+        // --- Optimistic Update ---
+        if (isEdit) {
+            // When admin edits, we need to preserve original username and password
+            let originalPlaylist = window.getAllSheetData().find(p => p.id == playlistId);
+            playlistData = {
+                id: playlistId,
+                date: dom.eventDateInput.value,
+                location: dom.eventLocationInput.value,
+                phoneNumber: dom.phoneNumberInput.value,
+                brideZaffa: dom.brideZaffaInput.value,
+                groomZaffa: dom.groomZaffaInput.value,
+                songs: songs,
+                notes: dom.notesInput.value,
+                username: originalPlaylist ? originalPlaylist.username : 'unknown',
+                password: originalPlaylist ? originalPlaylist.password : 'unknown'
+            };
+        } else {
+             // Admin should not be able to create new playlists from this form
+            if (isAdmin) {
+                window.showAlert('لا يمكن للمدير إنشاء قوائم جديدة من هذه الواجهة.');
+                return;
+            }
+            playlistData = {
+                date: dom.eventDateInput.value,
+                location: dom.eventLocationInput.value,
+                phoneNumber: dom.phoneNumberInput.value,
+                brideZaffa: dom.brideZaffaInput.value,
+                groomZaffa: dom.groomZaffaInput.value,
+                songs: songs,
+                notes: dom.notesInput.value,
+                username: currentUser,
+                password: currentUserPassword || '' // Ensure password exists
+            };
+        }
         
         var playlists = window.getAllPlaylists();
         var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
@@ -81,10 +107,10 @@
         window.resetForm();
 
         // Show confetti for the first playlist
-     if ((isFirstPlaylist || isEdit) && playlistId && window.getAllPlaylists().length > 0) {
+        if (isFirstPlaylist && window.getAllPlaylists().length > 0) {
            localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
             /* @tweakable The WhatsApp number to send the first playlist details to. */
-            const whatsappNumber = '99383859';
+            const whatsappNumber = '96899383859';
             /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
             const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
             
@@ -139,6 +165,7 @@
         if (!card) return;
 
         var playlistId = card.getAttribute('data-id');
+        var isAdmin = localStorage.getItem('isAdmin') === 'true';
         var isDeleteButton = e.target.closest('.delete-btn');
         var isEditButton = e.target.closest('.edit-btn');
 

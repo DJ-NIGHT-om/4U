@@ -2,24 +2,17 @@
 (function() {
     'use strict';
     
-    /* @tweakable The delay in milliseconds between each background data sync. 12000ms = 12 seconds. */
-    const syncFrequency = 10000;
+    /* @tweakable The delay in milliseconds between each background data sync. A lower value means faster updates but more server requests. (e.g., 2500 = 2.5 seconds) */
+    const syncFrequency = 2500;
     var syncInterval;
     var allPlaylists = [];
     var allSheetData = []; // To store all data from the sheet for date checking
     var lastSyncTime = 0;
-    /* @tweakable If true, the background sync will be paused while an add/edit/delete operation is in progress to prevent race conditions. */
-    let isSyncPaused = false;
 
     /**
      * Syncs data from Google Sheets and updates both main page and archive (user-specific)
      */
     function syncDataFromSheet() {
-        if (isSyncPaused) {
-            console.log("Sync is paused due to an ongoing user action.");
-            return Promise.resolve();
-        }
-
         var currentUser = localStorage.getItem('currentUser');
         var isAdmin = localStorage.getItem('isAdmin') === 'true';
         if (!currentUser) return Promise.resolve();
@@ -33,28 +26,12 @@
 
         return window.fetchPlaylistsFromSheet()
             .then(function(data) {
-                // Ensure songs are parsed correctly on fetch
-                const processedData = data.map(playlist => {
-                    if (playlist.songs && typeof playlist.songs === 'string') {
-                        try {
-                            playlist.songs = JSON.parse(playlist.songs);
-                        } catch (e) {
-                            playlist.songs = []; // Default to empty array on parse error
-                        }
-                    }
-                    // Remove leading apostrophe from notes if it exists, which is used to force string type in Sheets
-                    if (playlist.notes && typeof playlist.notes === 'string' && playlist.notes.startsWith("'")) {
-                        playlist.notes = playlist.notes.substring(1);
-                    }
-                    return playlist;
-                });
-                
-                allSheetData = processedData; // Store all fetched data
+                allSheetData = data; // Store all fetched data
 
                 // Filter data based on user role
                 var userPlaylists = isAdmin
-                    ? processedData.filter(p => p.username) // Admin sees all playlists that have a user
-                    : processedData.filter(p => p.username === currentUser);
+                    ? data.filter(p => p.username) // Admin sees all playlists that have a user
+                    : data.filter(p => p.username === currentUser);
 
                 var today = new Date();
                 today.setHours(0, 0, 0, 0); // Set to start of today for comparison
@@ -110,17 +87,14 @@
                     }
                 }
 
-                // Check for deleted items in Google Sheet and remove from archive if user is not admin
-                if (!isAdmin) {
-                    var sheetIds = {};
-                    for (var i = 0; i < userPlaylists.length; i++) {
-                        sheetIds[userPlaylists[i].id.toString()] = true;
-                    }
-                    localArchive = localArchive.filter(function(p) {
-                        return sheetIds[p.id.toString()];
-                    });
-                    localStorage.setItem('archivedPlaylists', JSON.stringify(localArchive));
+                // Check for deleted items in Google Sheet and remove from archive
+                var sheetIds = {};
+                for (var i = 0; i < userPlaylists.length; i++) {
+                    sheetIds[userPlaylists[i].id.toString()] = true;
                 }
+                localArchive = localArchive.filter(function(p) {
+                    return sheetIds[p.id.toString()];
+                });
 
                 // Update main page display
                 var previousCount = allPlaylists.length;
@@ -147,8 +121,7 @@
                 // Don't show error to user for background sync
             })
             .finally(function() {
-                // The loading indicator is hidden automatically by a timeout in showLoading,
-                // but we can call hide here again to be safe, especially if the sync was very fast.
+                // Ensure loading indicator is hidden after sync
                 window.showLoading(false);
             });
     }
@@ -176,25 +149,6 @@
         if (syncInterval) {
             clearInterval(syncInterval);
             syncInterval = null;
-        }
-    }
-
-    /**
-     * Pauses or resumes the background sync.
-     * @param {boolean} pause - True to pause, false to resume.
-     * @param {number} [resumeAfterMs=0] - If resuming, this is the delay before it restarts.
-     */
-    function setSyncPaused(pause, resumeAfterMs = 0) {
-        isSyncPaused = pause;
-        if (!pause) {
-            console.log(`Resuming sync in ${resumeAfterMs}ms.`);
-            // When resuming, restart the sync interval after a short delay.
-            stopRealTimeSync();
-            setTimeout(startRealTimeSync, resumeAfterMs);
-        } else {
-            console.log("Sync paused.");
-            // When pausing, stop it immediately.
-            stopRealTimeSync();
         }
     }
 
@@ -260,7 +214,7 @@
             }
             
             return window.postDataToSheet({ action: 'archive', ids: idsToDelete });
-        } catch(error) {
+        } catch (error) {
             console.error('Error archiving playlists in Google Sheet:', error);
             window.showAlert('حدث خطأ أثناء أرشفة بعض القوائم. سيتم إعادة المحاولة في التحميل القادم.');
         }
@@ -277,30 +231,15 @@
     /**
      * Updates the local playlist array and re-renders the UI.
      * @param {Array} newPlaylists - The new array of playlists.
-     * @param {object} [playlistToUpdate] - Optional. If provided, only this specific playlist card will be updated for efficiency.
      */
-    function updateLocalPlaylists(newPlaylists, playlistToUpdate) {
+    function updateLocalPlaylists(newPlaylists) {
         // Sort playlists by date before updating the global state and UI
         allPlaylists = newPlaylists.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-        // Persist the changes to local storage immediately
-        var currentUser = localStorage.getItem('currentUser');
-        var isAdmin = localStorage.getItem('isAdmin') === 'true';
-        if (currentUser) {
-            var cacheKey = 'cachedPlaylists_' + (isAdmin ? 'admin' : currentUser);
-            localStorage.setItem(cacheKey, JSON.stringify(allPlaylists));
-        }
-
         if (window.location.pathname.indexOf('index.html') !== -1 || window.location.pathname === '/') {
-            if (playlistToUpdate && typeof window.renderOrUpdatePlaylistCard === 'function') {
-                // Efficiently update just one card
-                window.renderOrUpdatePlaylistCard(playlistToUpdate);
-            } else {
-                // Fallback to re-rendering everything if needed
-                var dom = window.getDOMElements();
-                if (dom.playlistSection) {
-                    window.renderPlaylists(dom.playlistSection, allPlaylists);
-                }
+            var dom = window.getDOMElements();
+            if (dom.playlistSection) {
+                window.renderPlaylists(dom.playlistSection, allPlaylists);
             }
         }
     }
@@ -314,5 +253,4 @@
     window.getAllPlaylists = getAllPlaylists;
     window.getAllSheetData = getAllSheetData;
     window.updateLocalPlaylists = updateLocalPlaylists;
-    window.setSyncPaused = setSyncPaused;
 })();

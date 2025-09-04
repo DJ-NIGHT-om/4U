@@ -4,21 +4,31 @@
 
     /**
      * Attaches an auto-resize listener to a textarea element.
+     * The textarea will expand vertically to fit its content.
+     * @param {HTMLTextAreaElement} textarea - The textarea element.
      */
     function enableAutoresize(textarea) {
         if (!textarea) return;
         
         const autoresizeHandler = () => {
             textarea.style.height = 'auto';
+            // A small buffer helps prevent scrollbars on single-line textareas
             const buffer = 2; 
             textarea.style.height = (textarea.scrollHeight + buffer) + 'px';
         };
 
         textarea.addEventListener('input', autoresizeHandler);
-        textarea.addEventListener('change', autoresizeHandler); 
+        textarea.addEventListener('change', autoresizeHandler); // For initial population
+        
+        // Trigger it once initially in case there's pre-filled content
         setTimeout(autoresizeHandler, 10); 
     }
     
+    /**
+     * Updates the day name display when date changes
+     * @param {HTMLInputElement} dateInput - The date input element
+     * @param {HTMLElement} dayNameDisplay - The element to display the day name
+     */
     function updateDayNameDisplay(dateInput, dayNameDisplay) {
         if (!dateInput || !dayNameDisplay) return;
         if (dateInput.value) {
@@ -34,12 +44,21 @@
         }
     }
 
+    /* @tweakable Message for when the date is available */
     const dateAvailableMessage = "التاريخ غير محجوز لحد الأن";
+    /* @tweakable Message for when the date is booked */
     const dateBookedMessage = "للأسف التاريخ محجوز";
+    /* @tweakable Message for when a past date is entered */
     const dateInPastMessage = "أدخلت تاريخاً قديماً";
 
+    /**
+     * Disables or enables form fields, except for the date input.
+     * @param {boolean} disabled - True to disable, false to enable.
+     */
     function setFormFieldsDisabled(disabled) {
         const dom = window.getDOMElements();
+        
+        // List of inputs to toggle, excluding the date input
         const inputsToToggle = [
             dom.eventLocationInput,
             dom.phoneNumberInput,
@@ -51,6 +70,7 @@
             if (input) input.disabled = disabled;
         });
         
+        // Disable all song inputs and their remove buttons
         const songGroups = dom.songsContainer.querySelectorAll('.song-input-group');
         songGroups.forEach(group => {
             const input = group.querySelector('.song-input');
@@ -59,10 +79,21 @@
             if (removeBtn) removeBtn.disabled = disabled;
         });
 
-        if (dom.addSongBtn) dom.addSongBtn.disabled = disabled;
-        if (dom.saveBtn) dom.saveBtn.disabled = disabled;
+        // Disable add song button
+        if (dom.addSongBtn) {
+            dom.addSongBtn.disabled = disabled;
+        }
+
+        // Disable save button
+        if (dom.saveBtn) {
+            dom.saveBtn.disabled = disabled;
+        }
     }
 
+    /**
+     * Updates the date availability message below the date input.
+     * @param {boolean|null|string} isAvailable - true if available, false if booked, 'past' if in the past, null to hide.
+     */
     function updateDateAvailabilityMessage(isAvailable) {
         var dom = window.getDOMElements();
         if (!dom.dateAvailabilityMessage) return;
@@ -71,25 +102,29 @@
             dom.dateAvailabilityMessage.className = 'availability-message';
             dom.dateAvailabilityMessage.textContent = '';
             dom.dateAvailabilityMessage.style.display = 'none';
-            setFormFieldsDisabled(false);
+            setFormFieldsDisabled(false); // Enable fields
         } else if (isAvailable === 'past') {
             dom.dateAvailabilityMessage.className = 'availability-message booked';
             dom.dateAvailabilityMessage.textContent = dateInPastMessage;
             dom.dateAvailabilityMessage.style.display = 'block';
-            setFormFieldsDisabled(true);
+            setFormFieldsDisabled(true); // Disable fields
         } else if (isAvailable) {
             dom.dateAvailabilityMessage.className = 'availability-message available';
             dom.dateAvailabilityMessage.textContent = dateAvailableMessage;
             dom.dateAvailabilityMessage.style.display = 'block';
-            setFormFieldsDisabled(false);
+            setFormFieldsDisabled(false); // Enable fields
         } else {
             dom.dateAvailabilityMessage.className = 'availability-message booked';
             dom.dateAvailabilityMessage.textContent = dateBookedMessage;
             dom.dateAvailabilityMessage.style.display = 'block';
-            setFormFieldsDisabled(true);
+            setFormFieldsDisabled(true); // Disable fields
         }
     }
 
+    /**
+     * Shows or hides the main form section.
+     * @param {boolean} show - `true` to show, `false` to hide.
+     */
     function showForm(show) {
         var elements = window.getDOMElements();
         var formSection = elements.formSection;
@@ -106,6 +141,12 @@
         }
     }
 
+    /**
+     * Adds a new song input field to the form.
+     * @param {HTMLElement} container - The container to add the song field to.
+     * @param {boolean} focusNew - Whether to focus the new input field.
+     * @param {string} [value=''] - An optional initial value for the input.
+     */
     function addSongField(container, focusNew, value) {
         value = value || '';
         var group = document.createElement('div');
@@ -155,10 +196,15 @@
         group.appendChild(removeBtn);
         container.appendChild(group);
 
-        if (focusNew) input.focus();
+        if (focusNew) {
+            input.focus();
+        }
     }
 
+    /* @tweakable The maximum number of songs allowed in a playlist. */
     const maxSongs = 10;
+
+    /* @tweakable Prevent adding a new song if the last input is empty. */
     const preventEmptySongOnAdd = true;
 
     function requestAddSongField() {
@@ -182,6 +228,9 @@
         addSongField(dom.songsContainer, true);
     }
     
+    /**
+     * Resets the form to its initial state.
+     */
     function resetForm() {
         var dom = window.getDOMElements();
         if (!dom.playlistForm) return;
@@ -195,44 +244,41 @@
         dom.dayNameDisplay.textContent = '';
         updateDateAvailabilityMessage(null);
         
+        // Setup autoresize for static textareas
         [dom.notesInput].forEach(enableAutoresize);
+        
+        // Setup auto-expand for static inputs
         [dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(setupAutoExpand);
 
-        /* @tweakable The number of empty song fields to show when creating a new playlist. Must be at least 1. */
-        const initialSongFields = 1;
-        for (let i = 0; i < Math.max(1, initialSongFields); i++) {
-            addSongField(dom.songsContainer, false);
-        }
-
+        addSongField(dom.songsContainer, false);
+        
         updateDayNameDisplay(dom.eventDateInput, dom.dayNameDisplay);
         
         showForm(false);
     }
 
+    /**
+     * Populates the form with data from a playlist for editing.
+     * @param {object} playlist - The playlist object to edit.
+     */
     function populateEditForm(playlist) {
         var dom = window.getDOMElements();
         
-        // Manually reset form parts instead of calling resetForm() to avoid flicker
-        if (dom.playlistForm) {
-            dom.playlistForm.reset();
-        }
-        dom.playlistIdInput.value = '';
-        dom.notesInput.value = '';
-        dom.dayNameDisplay.textContent = '';
-        updateDateAvailabilityMessage(null);
-
+        resetForm();
         showForm(true);
         
         dom.formTitle.innerHTML = '<i class="fas fa-edit"></i> تعديل القائمة';
         dom.saveBtn.textContent = 'حفظ التعديلات';
         dom.playlistIdInput.value = playlist.id;
 
+        // The stored date is a 'YYYY-MM-DD' string, which new Date() interprets as local time.
+        // We need to treat it as a UTC date to avoid timezone shifts.
         var eventDate = new Date(playlist.date);
         if (!isNaN(eventDate.getTime())) {
-            const adjustedDate = new Date(eventDate.getTime() + (4 * 3600000));
-            const yyyy = adjustedDate.getUTCFullYear();
-            const mm = String(adjustedDate.getUTCMonth() + 1).padStart(2, '0');
-            const dd = String(adjustedDate.getUTCDate()).padStart(2, '0');
+            // By using UTC methods, we ensure the date string is correctly reconstructed regardless of browser timezone.
+            const yyyy = eventDate.getUTCFullYear();
+            const mm = String(eventDate.getUTCMonth() + 1).padStart(2, '0');
+            const dd = String(eventDate.getUTCDate()).padStart(2, '0');
             dom.eventDateInput.value = `${yyyy}-${mm}-${dd}`;
             updateDayNameDisplay(dom.eventDateInput, dom.dayNameDisplay);
         } else {
@@ -240,126 +286,64 @@
             dom.dayNameDisplay.textContent = '';
         }
 
-        dom.eventLocationInput.value = playlist.location || '';
-        dom.phoneNumberInput.value = playlist.phoneNumber || '';
-        dom.brideZaffaInput.value = playlist.brideZaffa || '';
-        dom.groomZaffaInput.value = playlist.groomZaffa || '';
+        dom.eventLocationInput.value = playlist.location;
+        dom.phoneNumberInput.value = playlist.phoneNumber;
+        dom.brideZaffaInput.value = playlist.brideZaffa;
+        dom.groomZaffaInput.value = playlist.groomZaffa;
         dom.notesInput.value = playlist.notes || '';
         
+        // Trigger autoresize for notes field
         if (dom.notesInput) {
             setTimeout(() => dom.notesInput.dispatchEvent(new Event('change')), 10);
         }
         
+        // Trigger auto-expand for text inputs
         [dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(input => {
             if (input) {
                 setTimeout(() => input.dispatchEvent(new Event('input')), 10);
             }
         });
 
-        // --- Performance Improvement: Build HTML string for all songs at once ---
-        var songs = Array.isArray(playlist.songs) ? playlist.songs : [];
-
-        var songsHtml = songs.map(song => `
-            <div class="song-input-group">
-                <div class="auto-expand-input-container song-input-container" data-value="${song}">
-                    <input type="text" class="song-input auto-expand-input" placeholder="أدخل اسم الأغنية" value="${song}">
-                </div>
-                <button type="button" class="remove-song-btn"><i class="fas fa-times-circle"></i></button>
-            </div>
-        `).join('');
-
-        // Add one empty song field if below max limit
-        if (songs.length < maxSongs) {
-            songsHtml += `
-                <div class="song-input-group">
-                    <div class="auto-expand-input-container song-input-container" data-value="">
-                        <input type="text" class="song-input auto-expand-input" placeholder="أدخل اسم الأغنية" value="">
-                    </div>
-                    <button type="button" class="remove-song-btn"><i class="fas fa-times-circle"></i></button>
-                </div>
-            `;
+        dom.songsContainer.innerHTML = '';
+        var songs = [];
+        try {
+            if (typeof playlist.songs === 'string' && playlist.songs.trim().startsWith('[')) {
+                var parsedSongs = JSON.parse(playlist.songs);
+                if (Array.isArray(parsedSongs)) songs = parsedSongs;
+            }
+        } catch(e) { 
+            console.error('Error parsing songs for editing:', e); 
         }
 
-        dom.songsContainer.innerHTML = songsHtml;
-        
-        // Add event listeners after populating
-        dom.songsContainer.querySelectorAll('.song-input-group').forEach(group => {
-            const input = group.querySelector('.song-input');
-            const removeBtn = group.querySelector('.remove-song-btn');
-            const inputContainer = group.querySelector('.auto-expand-input-container');
-
-            if (input) {
-                input.addEventListener('input', () => {
-                    inputContainer.dataset.value = input.value;
-                });
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        requestAddSongField();
-                    }
-                });
-            }
-            if (removeBtn) {
-                removeBtn.onclick = function() {
-                    if (input.value.trim() === '') {
-                        if (group.parentNode) group.parentNode.removeChild(group);
-                        return;
-                    }
-                    window.showConfirm(window.songDeleteConfirmationMessage, 'تأكيد الحذف')
-                        .then(function(confirmed) {
-                            if (confirmed) {
-                                if (group.parentNode) group.parentNode.removeChild(group);
-                            }
-                        });
-                };
-            }
+        songs.forEach(function(song) {
+            addSongField(dom.songsContainer, false, song);
         });
-        
-        // Focus the last song input if it's empty
-        const lastSongInput = dom.songsContainer.querySelector('.song-input:last-of-type');
-        if (lastSongInput && lastSongInput.value === '') {
-            lastSongInput.focus();
+
+        // Add one empty field at the end if not exceeding max songs
+        if (songs.length < maxSongs) {
+            addSongField(dom.songsContainer, true);
         }
     }
 
+    /**
+     * Wraps an auto-expanding input in its necessary container.
+     * @param {HTMLInputElement} inputEl - The input element to wrap.
+     */
     function setupAutoExpand(inputEl) {
         if (!inputEl || inputEl.parentNode.classList.contains('auto-expand-input-container')) {
             return;
         }
+
         const container = document.createElement('div');
         container.className = 'auto-expand-input-container';
+
         inputEl.parentNode.insertBefore(container, inputEl);
         container.appendChild(inputEl);
+        
         container.dataset.value = inputEl.value;
         inputEl.addEventListener('input', () => {
             container.dataset.value = inputEl.value;
         });
-    }
-
-    // ✅ دالة تحديث فوري بعد الحفظ أو التعديل
-    function afterSuccessfulSaveOrEdit(updatedListFromServer) {
-        try {
-            if (Array.isArray(updatedListFromServer)) {
-                localStorage.setItem('sheet_playlists_cache_v2', JSON.stringify(updatedListFromServer));
-                localStorage.setItem('sheet_playlists_cache_time_v2', String(Date.now()));
-
-                // --- ✅ تحقق إن كان هذا أول إدخال ---
-                const alreadySet = localStorage.getItem('firstPlaylistCreationTime');
-if (!alreadySet && updatedListFromServer.length === 1) {
-    localStorage.setItem('firstPlaylistCreationTime', String(Date.now()));
-    localStorage.setItem('firstPlaylistWhatsappLink', 'https://wa.me/968XXXXXXXX'); // ضع رقمك هنا
-    localStorage.setItem('firstPlaylistCreated', 'true'); 
-    localStorage.setItem('firstPlaylistMessageShown', 'false'); // ✅ أول مرة لم تُعرض بعد
-}
-            }
-        } catch {}
-        if (typeof window.updateLocalPlaylists === 'function') {
-            const cached = JSON.parse(localStorage.getItem('sheet_playlists_cache_v2') || '[]');
-            window.updateLocalPlaylists(cached);
-        }
-        if (typeof window.syncDataFromSheet === 'function') {
-            window.syncDataFromSheet();
-        }
     }
 
     // Make functions globally accessible
@@ -369,6 +353,5 @@ if (!alreadySet && updatedListFromServer.length === 1) {
     window.requestAddSongField = requestAddSongField;
     window.resetForm = resetForm;
     window.populateEditForm = populateEditForm;
-    window.afterSuccessfulSaveOrEdit = afterSuccessfulSaveOrEdit;
 
 })();

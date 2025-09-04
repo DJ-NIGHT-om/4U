@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <link rel="icon" href="logo1.png" type="image/png">
@@ -15,10 +16,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTkyIiBoZWlnaHQ9IjE5MiIgdmlld0JveD0iMCAwIDE5MiAxOTIiIGZpbGw9IndoaXRlIiBmaWxsPSJub25lIiB4PSI0OCIgeT0iNDgiIHdpZHRoPSI5NiIgaGVpZ2h0PSI5NiIgdmlld0JveD0iMCAwIDUxMiA1MTIiIGZpbGw9IndoaXRlIj4KPHA+PHBhdGggZD0iTTI1NiA4QzExOSA4IDggMTE5IDggMjU2czExMSAyNDggMjQ4IDI0OCAyNDgtMTExIDI0OC0yNDhTMzkzIDggMjU2IDh6bTAgNDQ4Yy0xMTAuNSAwLTIwMC04OS41LTIwMC0yMDBTMTQ1LjUgNTYgMjU2IDU2czIwMCA4OS41IDIwMCAyMDAtODkuNSAyMDAtMjAwIDIwMHoiLz48L3N2Zz4KPC9zdmc+">
     <title>منسق الحفلات</title>
     <link rel="stylesheet" href="main.css">
-    <link rel="stylesheet" href="button.css">
-    <link rel="stylesheet" href="card.css">
-    <link rel="stylesheet" href="form.css">
-    <link rel="stylesheet" href="modal.css">
+    <link rel="stylesheet" href="components.css">
     <link rel="stylesheet" href="pages.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
@@ -68,8 +66,10 @@
                 </button>
             </div>
             <div id="first-playlist-message" class="first-playlist-message hidden">
-                 <p id="first-playlist-message-text">
-                    <!-- Dynamic content will be injected here by main.js -->
+                 <p>
+                    <strong id="first-playlist-message-text">
+                        <!-- Dynamic content will be injected here by main.js -->
+                    </strong>
                 </p>
             </div>
         </header>
@@ -155,20 +155,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
     <script>
-        /* @tweakable When set to true, the page will reload to show updates instead of using a loading spinner. Set to false for instant UI updates. */
-        const refreshPageOnUpdate = false;
         /* @tweakable Setting to true will disable the right-click context menu. */
-        const preventContextMenu = true;
-        /* @tweakable The duration of the 'edited' highlight animation on a card after saving changes, in milliseconds. */
-        const cardHighlightDuration = 2000;
-        /* @tweakable The duration of the highlight animation on a newly created card, in milliseconds. */
-        const newCardHighlightDuration = 2500;
-        /* @tweakable If true, the system will compare old and new values and send only the changed fields to the server for efficiency. */
-        const sendOnlyChangedFields = true;
-        /* @tweakable If true, the welcome message is removed when the user's last playlist is deleted. This ensures the message only shows when there is at least one playlist. */
-        const removeWelcomeOnLastDelete = true;
-        /* @tweakable The duration in minutes for which the first playlist message is shown after creation. After this time, it will disappear. */
-        const firstPlaylistMessageDurationMinutes = 60;
+        const preventContextMenu = false;
         if (preventContextMenu) {
             document.addEventListener('contextmenu', e => e.preventDefault());
         }
@@ -181,16 +169,15 @@
         }
       }
     </script>
-    <script src="config.js" defer></script>
-    <script src="modal.js" defer></script>
-    <script src="ui.js" defer></script>
-    <script src="form.js" defer></script>
-    <script src="api.js" defer></script>
-    <script src="sync.js" defer></script>
-    <script src="view.js" defer></script>
-    <script src="playlist.js" defer></script>
-    <script src="actions.js" defer></script>
-    <script src="effects.js" defer></script>
-    <script src="main.js" defer></script>
+    <script src="config.js"></script>
+    <script src="modal.js"></script>
+    <script src="api.js"></script>
+    <script src="sync.js"></script>
+    <script src="ui.js"></script>
+    <script src="form.js"></script>
+    <script src="view.js"></script>
+    <script src="playlist.js"></script>
+    <script src="effects.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
