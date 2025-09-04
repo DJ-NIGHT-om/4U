@@ -41,16 +41,10 @@
             return;
         }
 
-        function showLoading(show) {
-            if (loadingOverlay) {
-                if (show) {
-                    loadingOverlay.classList.remove('hidden');
-                } else {
-                    loadingOverlay.classList.add('hidden');
-                }
-            }
-        }
-
+        // The showLoading function in ui.js now has a built-in timeout,
+        // so explicit hiding is no longer necessary in most cases here.
+        // The loading screen will show for a maximum of 1 second.
+        
         function showRegisterForm() {
             document.getElementById('login-section').classList.add('hidden');
             registerFormSection.classList.remove('hidden');
@@ -142,7 +136,7 @@
                         window.showAlert('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.');
                     })
                     .finally(function() {
-                        window.showLoading(false);
+                        // The loading indicator is now hidden automatically by a timeout in showLoading.
                     });
             });
         }
@@ -198,7 +192,7 @@
                         window.showAlert('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.');
                     })
                     .finally(function() {
-                        window.showLoading(false);
+                        // The loading indicator is now hidden automatically by a timeout in showLoading.
                     });
             });
         }
@@ -246,7 +240,7 @@
                         window.showAlert('حدث خطأ أثناء إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.');
                     })
                     .finally(function() {
-                        window.showLoading(false);
+                        // The loading indicator is now hidden automatically by a timeout in showLoading.
                     });
             });
         }
@@ -261,6 +255,6 @@
         }
 
         // Initial setup
-        window.showLoading(false);
+        window.showLoading(false); // Hide initially on page load
     });
 })();

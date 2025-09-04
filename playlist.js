@@ -3,117 +3,47 @@
     'use strict';
     
     /**
-     * Handles the form submission for adding or editing a playlist.
-     * @param {Event} e - The form submit event.
+     * Optimistically adds a new playlist to the UI before sending it to the server.
+     * @param {object} playlistData - The data for the new playlist.
+     * @returns {string} The generated temporary ID for the new playlist.
      */
-    function handleFormSubmit(e) {
-        e.preventDefault();
-        var currentUser = localStorage.getItem('currentUser');
-        var currentUserPassword = localStorage.getItem('currentUserPassword');
-        var isAdmin = localStorage.getItem('isAdmin') === 'true';
-        if (!currentUser) return;
+    function optimisticallyAddPlaylist(playlistData) {
+        const playlists = window.getAllPlaylists();
+        const tempId = new Date().getTime().toString();
+        
+        const newPlaylist = { ...playlistData, id: tempId };
+        
+        // Add the new playlist to the local array
+        playlists.push(newPlaylist);
+        
+        // Sort the array by date to maintain order
+        playlists.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Update the UI immediately
+        window.updateLocalPlaylists(playlists, newPlaylist);
+        
+        return tempId;
+    }
 
-        var dom = window.getDOMElements();
-        
-        // Validate date - must be today or future based on app timezone
-        var selectedDate = new Date(dom.eventDateInput.value);
-        // This creates a date at midnight UTC, which is what we want for comparison
-        var selectedDateUTC = new Date(selectedDate.getUTCFullYear(), selectedDate.getUTCMonth(), selectedDate.getUTCDate());
-        var appToday = window.getAppToday();
-        
-        if (selectedDateUTC < appToday) {
-            window.showAlert('لا يمكن اختيار تاريخ في الماضي. يرجى اختيار تاريخ اليوم أو تاريخ مستقبلي.');
-            return;
-        }
-
-        var songInputs = dom.songsContainer.querySelectorAll('.song-input');
-        var songs = [];
-        for (var i = 0; i < songInputs.length; i++) {
-            var songValue = songInputs[i].value.trim();
-            if (songValue) {
-                songs.push(songValue);
-            }
-        }
-        
-        var playlistId = dom.playlistIdInput.value;
-        var isEdit = playlistId && playlistId.trim() !== '';
-
-        // Check if this is the first playlist being added by this user
-        const isFirstPlaylist = !isEdit && !isAdmin && window.getAllPlaylists().length === 0;
-
-        var playlistData;
-        
-        // --- Optimistic Update ---
-        if (isEdit) {
-            // When admin edits, we need to preserve original username and password
-            let originalPlaylist = window.getAllSheetData().find(p => p.id == playlistId);
-            playlistData = {
-                id: playlistId,
-                date: dom.eventDateInput.value,
-                location: dom.eventLocationInput.value,
-                phoneNumber: dom.phoneNumberInput.value,
-                brideZaffa: dom.brideZaffaInput.value,
-                groomZaffa: dom.groomZaffaInput.value,
-                songs: songs,
-                notes: dom.notesInput.value,
-                username: originalPlaylist ? originalPlaylist.username : 'unknown',
-                password: originalPlaylist ? originalPlaylist.password : 'unknown'
-            };
-        } else {
-             // Admin should not be able to create new playlists from this form
-            if (isAdmin) {
-                window.showAlert('لا يمكن للمدير إنشاء قوائم جديدة من هذه الواجهة.');
-                return;
-            }
-            playlistData = {
-                date: dom.eventDateInput.value,
-                location: dom.eventLocationInput.value,
-                phoneNumber: dom.phoneNumberInput.value,
-                brideZaffa: dom.brideZaffaInput.value,
-                groomZaffa: dom.groomZaffaInput.value,
-                songs: songs,
-                notes: dom.notesInput.value,
-                username: currentUser,
-                password: currentUserPassword || '' // Ensure password exists
-            };
-        }
-        
-        var playlists = window.getAllPlaylists();
-        var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
-        var newOrUpdatedPlaylist;
-
-        // --- Optimistic Update ---
-        if (isEdit) {
-            playlistData.id = playlistId;
-            let found = false;
-            newOrUpdatedPlaylist = { ...playlistData };
-            playlists = playlists.map(p => {
-                if (p.id.toString() === playlistId.toString()) {
-                    found = true;
-                    return newOrUpdatedPlaylist;
-                }
-                return p;
-            });
-            if (!found) playlists.push(newOrUpdatedPlaylist);
-        } else {
-            playlistId = new Date().getTime().toString();
-            playlistData.id = playlistId;
-            newOrUpdatedPlaylist = { ...playlistData };
-            playlists.push(newOrUpdatedPlaylist);
-        }
-        
-        // Immediately update the UI
-        window.updateLocalPlaylists(playlists);
+    /**
+     * Adds a new playlist, handling optimistic updates and API calls.
+     * @param {object} playlistData - The data for the new playlist from the form.
+     * @param {boolean} isFirstPlaylist - Whether this is the user's first playlist.
+     */
+    function addPlaylist(playlistData, isFirstPlaylist) {
+        const tempId = optimisticallyAddPlaylist(playlistData);
         window.resetForm();
-
-        // Show confetti for the first playlist
-        if (isFirstPlaylist && window.getAllPlaylists().length > 0) {
-           localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
-            /* @tweakable The WhatsApp number to send the first playlist details to. */
+        
+        // Handle first playlist specific logic
+        if (isFirstPlaylist) {
+             /* @tweakable The WhatsApp number to send the first playlist details to. */
             const whatsappNumber = '96899383859';
             /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
             const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
             
+            localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
+            localStorage.removeItem('firstPlaylistMessageShown'); // Reset shown flag
+
             const message = whatsappMessageTemplate
                 .replace('{date}', playlistData.date)
                 .replace('{location}', playlistData.location)
@@ -122,153 +52,174 @@
             
             const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
             localStorage.setItem('firstPlaylistWhatsappLink', whatsappUrl);
-
-           if (window.triggerWelcomeConfetti) {
-              window.triggerWelcomeConfetti();
-           }
-           // Manually dispatch event since sync isn't called immediately
-           window.dispatchEvent(new CustomEvent('datasync'));
-        }
         
-        // --- End Optimistic Update ---
+           if (window.triggerWelcomeConfetti) window.triggerWelcomeConfetti();
+           window.dispatchEvent(new CustomEvent('datasync')); // Ensure message appears instantly
+        }
 
-        var apiPayload = {
+        /* @tweakable Prepending notes with a special character (like a quote) forces Google Sheets to treat it as plain text, preventing unwanted auto-formatting of dates or numbers. */
+        const forceNotesAsStringInSheet = true;
+        let notesValue = playlistData.notes;
+        if (forceNotesAsStringInSheet && notesValue) {
+            notesValue = "'" + notesValue;
+        }
+
+        const apiPayload = {
             ...playlistData,
-            action: isEdit ? 'edit' : 'add',
-            songs: playlistData.songs, // Ensure songs are sent as an array
+            id: tempId,
+            notes: notesValue,
+            action: 'add',
+            forceNotesAsString: false
         };
 
         window.postDataToSheet(apiPayload)
             .then(function(result) {
                 if (result.status === 'success') {
-                    // Success! The optimistic update is now confirmed by the server.
-                    // The background sync will eventually align everything perfectly.
-                    console.log('Save successful.');
+                    console.log('Add successful.');
+                    if (isFirstPlaylist) {
+                        localStorage.setItem('firstPlaylistCreated', 'true');
+                    }
+                    // The background sync will handle the final state.
                 } else {
-                    throw new Error(result.message || 'Failed to save data.');
+                    throw new Error(result.message || 'Failed to add playlist.');
                 }
             })
             .catch(function(error) {
-                console.error('Error saving playlist, reverting UI:', error);
-                window.showAlert('حدث خطأ أثناء حفظ القائمة. سيتم التراجع عن التغييرات.');
-                // Revert UI to the state before the optimistic update
-                window.updateLocalPlaylists(oldPlaylists);
+                console.error('Error adding playlist, reverting UI:', error);
+                window.showAlert('حدث خطأ أثناء إضافة القائمة. سيتم التراجع عن التغييرات.');
+                // Revert UI by removing the optimistically added playlist
+                const revertedPlaylists = window.getAllPlaylists().filter(p => p.id !== tempId);
+                window.updateLocalPlaylists(revertedPlaylists);
             });
     }
-    
+
     /**
-     * Handles clicks on the edit and delete buttons within a playlist card.
-     * @param {Event} e - The click event.
+     * Updates an existing playlist, handling optimistic updates and API calls.
+     * @param {string} playlistId - The ID of the playlist to update.
+     * @param {object} updatedData - The new data for the playlist from the form.
+     * @param {object} originalPlaylist - The original playlist data before edits.
      */
-    function handlePlaylistAction(e) {
-        var card = e.target.closest('.playlist-card');
-        if (!card) return;
+    function updatePlaylist(playlistId, updatedData, originalPlaylist) {
+        /* @tweakable The delay in milliseconds to wait before resuming background sync after a successful edit, preventing race conditions. */
+        const resumeSyncDelay = 1000;
 
-        var playlistId = card.getAttribute('data-id');
-        var isAdmin = localStorage.getItem('isAdmin') === 'true';
-        var isDeleteButton = e.target.closest('.delete-btn');
-        var isEditButton = e.target.closest('.edit-btn');
+        const playlists = window.getAllPlaylists();
+        const oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
 
-        if (isDeleteButton) {
-            /* @tweakable The duration in milliseconds for the delete animation. Should match the CSS animation time. */
-            const deleteAnimationDuration = 300;
-            
-            window.showConfirm('هل أنت متأكد من حذف هذه القائمة؟')
-                .then(function(confirmed) {
-                    if (confirmed) {
-                        // --- Animate then Optimistically Update ---
-                        var playlists = window.getAllPlaylists();
-                        var oldPlaylists = JSON.parse(JSON.stringify(playlists)); // Deep copy for revert
-                        
-                        // 1. Add animation class
-                        card.classList.add('deleting');
-                        
-                        // 2. After animation, update data and UI
-                        setTimeout(() => {
-                            var updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
-                            window.updateLocalPlaylists(updatedPlaylists);
+        // Pause sync to prevent race conditions
+        window.setSyncPaused(true);
 
-                            // 3. Send delete request to server in the background
-                            window.postDataToSheet({ action: 'delete', id: playlistId })
-                                .then(function(result) {
-                                    if (result && result.status === 'success') {
-                                        console.log('Delete successful.');
-                                    } else {
-                                        throw new Error(result.message || 'Failed to delete playlist on server.');
-                                    }
-                                })
-                                .catch(function(error) {
-                                    console.error('Error deleting playlist, reverting UI:', error);
-                                    window.showAlert('حدث خطأ أثناء حذف القائمة. سيتم استعادة القائمة.');
-                                    // Revert UI to previous state
-                                    window.updateLocalPlaylists(oldPlaylists);
-                                });
-                        }, deleteAnimationDuration);
-                    }
-                });
-        } else if (isEditButton) {
-            // Use all sheet data to find the playlist, ensuring we can edit items
-            // that might be incorrectly filtered out from the main view.
-            var allSheetData = window.getAllSheetData();
-            var playlist = null;
-            for (var i = 0; i < allSheetData.length; i++) {
-                // Using '==' for loose type comparison between string attribute and potential number ID
-                if (allSheetData[i].id == playlistId) {
-                    playlist = allSheetData[i];
-                    break;
-                }
-            }
-            if (playlist) {
-                window.populateEditForm(playlist);
-            } else {
-                console.error('Playlist with ID ' + playlistId + ' not found for editing.');
-                window.showAlert('لم يتم العثور على القائمة للتعديل. قد تحتاج إلى تحديث الصفحة.');
-            }
-        } else if (!isDeleteButton && !isEditButton) {
-            // Clicked on the card itself (not on action buttons)
-            window.toggleSongHighlight(card);
+        // Optimistically update UI
+        const newPlaylists = playlists.map(p => p.id.toString() === playlistId.toString() ? updatedData : p);
+        window.updateLocalPlaylists(newPlaylists, updatedData);
+        window.resetForm();
+
+        /* @tweakable This is now controlled from index.html */
+        let changes = {};
+        if (window.sendOnlyChangedFields) {
+            let originalSongs = Array.isArray(originalPlaylist.songs) ? originalPlaylist.songs : [];
+            try {
+                if (typeof originalPlaylist.songs === 'string') originalSongs = JSON.parse(originalPlaylist.songs);
+            } catch (e) { /* default to empty array */ }
+
+            if (updatedData.date !== originalPlaylist.date) changes.date = updatedData.date;
+            if (updatedData.location !== originalPlaylist.location) changes.location = updatedData.location;
+            if (updatedData.phoneNumber !== originalPlaylist.phoneNumber) changes.phoneNumber = updatedData.phoneNumber;
+            if (updatedData.brideZaffa !== originalPlaylist.brideZaffa) changes.brideZaffa = updatedData.brideZaffa;
+            if (updatedData.groomZaffa !== originalPlaylist.groomZaffa) changes.groomZaffa = updatedData.groomZaffa;
+            if (updatedData.notes !== originalPlaylist.notes) changes.notes = updatedData.notes;
+            if (JSON.stringify(updatedData.songs) !== JSON.stringify(originalSongs)) changes.songs = updatedData.songs;
         }
+
+        if (window.sendOnlyChangedFields && Object.keys(changes).length === 0) {
+            console.log("No changes detected, skipping API call.");
+            return;
+        }
+        
+        const apiPayload = {
+            action: 'edit',
+            id: playlistId,
+            changes: changes,
+            ...updatedData
+        };
+
+        window.postDataToSheet(apiPayload)
+            .then(function(result) {
+                if (result.status === 'success') {
+                    console.log('Edit successful. Triggering immediate sync.');
+                    // After a successful edit, sync immediately to get the canonical data
+                    return window.syncDataFromSheet();
+                } else {
+                    throw new Error(result.message || 'Failed to edit playlist.');
+                }
+            })
+            .catch(function(error) {
+                console.error('Error updating playlist, reverting UI:', error);
+                window.showAlert('حدث خطأ أثناء تعديل القائمة. سيتم التراجع عن التغييرات.');
+                window.updateLocalPlaylists(oldPlaylists); // Revert UI
+            })
+            .finally(function() {
+                // Resume sync after a short delay, regardless of outcome.
+                window.setSyncPaused(false, resumeSyncDelay);
+            });
     }
 
     /**
-     * Toggles highlighting of songs in a playlist card
-     * @param {HTMLElement} card - The playlist card element
+     * Deletes a playlist, handling optimistic updates and API calls.
+     * @param {string} playlistId - The ID of the playlist to delete.
+     * @param {HTMLElement} cardElement - The card element to animate/remove.
      */
-    function toggleSongHighlight(card) {
-        // Remove highlighting from all other cards first
-        var allCards = document.querySelectorAll('.playlist-card');
-        for (var i = 0; i < allCards.length; i++) {
-            if (allCards[i] !== card) {
-                allCards[i].classList.remove('selected');
-                var songItems = allCards[i].querySelectorAll('.playlist-songs li');
-                for (var j = 0; j < songItems.length; j++) {
-                    songItems[j].classList.remove('song-highlighted');
+    function deletePlaylist(playlistId, cardElement) {
+        /* @tweakable Setting to false will cause the item to be removed from the list instantly, without animation. */
+        const useDeleteAnimation = true;
+        /* @tweakable The duration in milliseconds for the delete animation, if enabled. */
+        const deleteAnimationDuration = 300;
+
+        const performDelete = () => {
+            const playlists = window.getAllPlaylists();
+            const oldPlaylists = JSON.parse(JSON.stringify(playlists));
+            const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+            // Check if this is the last playlist before filtering
+            if (window.removeWelcomeOnLastDelete && !isAdmin && playlists.length === 1) {
+                // If the playlist being deleted is the last one, clear the welcome message flags.
+                if (playlists[0].id.toString() === playlistId.toString()) {
+                    localStorage.removeItem('firstPlaylistCreationTime');
+                    localStorage.removeItem('firstPlaylistWhatsappLink');
+                    localStorage.removeItem('firstPlaylistCreated');
+                    localStorage.removeItem('firstPlaylistMessageShown');
+                    window.dispatchEvent(new CustomEvent('datasync'));
                 }
             }
-        }
 
-        // Toggle highlighting for the clicked card
-        var isCurrentlySelected = card.classList.contains('selected');
-        if (isCurrentlySelected) {
-            card.classList.remove('selected');
-            var songItems = card.querySelectorAll('.playlist-songs li');
-            for (var k = 0; k < songItems.length; k++) {
-                songItems[k].classList.remove('song-highlighted');
-            }
+            const updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
+            window.updateLocalPlaylists(updatedPlaylists);
+
+            window.postDataToSheet({ action: 'delete', id: playlistId })
+                .then(function(result) {
+                    if (result.status === 'success') {
+                        console.log('Delete successful.');
+                    } else {
+                        throw new Error(result.message || 'Failed to delete from server.');
+                    }
+                })
+                .catch(function(error) {
+                    console.error('Error deleting playlist, reverting UI:', error);
+                    window.showAlert('حدث خطأ أثناء الحذف. سيتم استعادة القائمة.');
+                    window.updateLocalPlaylists(oldPlaylists);
+                });
+        };
+
+        if (useDeleteAnimation && cardElement) {
+            cardElement.classList.add('deleting');
+            setTimeout(performDelete, deleteAnimationDuration);
         } else {
-            card.classList.add('selected');
-            var songItems = card.querySelectorAll('.playlist-songs li');
-            for (var k = 0; k < songItems.length; k++) {
-                songItems[k].classList.add('song-highlighted');
-            }
-            
-            // Force reflow to ensure icon colors are applied immediately
-            card.offsetHeight;
+            performDelete();
         }
     }
 
     // Make functions globally accessible
-    window.handleFormSubmit = handleFormSubmit;
-    window.handlePlaylistAction = handlePlaylistAction;
-    window.toggleSongHighlight = toggleSongHighlight;
+    window.addPlaylist = addPlaylist;
+    window.updatePlaylist = updatePlaylist;
+    window.deletePlaylist = deletePlaylist;
 })();
