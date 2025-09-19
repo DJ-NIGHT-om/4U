@@ -2,6 +2,51 @@
 (function() {
     'use strict';
     
+    /* @tweakable When true, the WhatsApp link in the welcome message will update in real-time as the user edits their first event. */
+    const updateWelcomeLinkOnEdit = true;
+    /* @tweakable The WhatsApp number to send the first playlist details to. */
+    const whatsappNumber = '96899383859';
+    /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
+    const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
+
+    /**
+     * Updates the welcome message's WhatsApp link in real-time as the user edits the form.
+     * This function is called on input events from the relevant form fields.
+     */
+    function updateWelcomeMessageLinkRealtime() {
+        if (!updateWelcomeLinkOnEdit) return;
+
+        const dom = window.getDOMElements();
+        // Only proceed if we are in edit mode (an ID is present)
+        if (!dom.playlistIdInput || !dom.playlistIdInput.value) return;
+
+        const playlistId = dom.playlistIdInput.value;
+        const playlists = window.getAllPlaylists();
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const firstPlaylistCreationTime = localStorage.getItem('firstPlaylistCreationTime');
+        const firstPlaylistMessageShown = localStorage.getItem('firstPlaylistMessageShown');
+
+        // Check if the conditions for showing the welcome message are met
+        if (!isAdmin && firstPlaylistCreationTime && firstPlaylistMessageShown !== 'true' && playlists.length === 1 && playlists[0].id.toString() === playlistId.toString()) {
+            const date = dom.eventDateInput.value;
+            const location = dom.eventLocationInput.value;
+            const brideZaffa = dom.brideZaffaInput.value;
+            const groomZaffa = dom.groomZaffaInput.value;
+
+            const message = whatsappMessageTemplate
+                .replace('{date}', date)
+                .replace('{location}', location)
+                .replace('{brideZaffa}', brideZaffa)
+                .replace('{groomZaffa}', groomZaffa);
+            
+            const whatsappUrl = `https://api.whatsapp.com/send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+            localStorage.setItem('firstPlaylistWhatsappLink', whatsappUrl);
+            
+            // Dispatch a custom event to notify the UI to update the welcome message display.
+            window.dispatchEvent(new CustomEvent('datasync'));
+        }
+    }
+    
     /**
      * Optimistically adds a new playlist to the UI before sending it to the server.
      * @param {object} playlistData - The data for the new playlist.
@@ -36,10 +81,6 @@
         
         // Handle first playlist specific logic
         if (isFirstPlaylist) {
-             /* @tweakable The WhatsApp number to send the first playlist details to. */
-            const whatsappNumber = '96899383859';
-            /* @tweakable The message template for the WhatsApp link. Use {date}, {location}, {brideZaffa}, {groomZaffa} as placeholders. */
-            const whatsappMessageTemplate = "السلام عليكم، هذه تفاصيل مناسبتنا:\n📅 التاريخ: {date}\n📍 المكان: {location}\n🥁 زفة العروس: {brideZaffa}\n🥁 زفة المعرس: {groomZaffa}";
             
             localStorage.setItem('firstPlaylistCreationTime', new Date().getTime());
             localStorage.removeItem('firstPlaylistMessageShown'); // Reset shown flag
@@ -114,6 +155,9 @@
         window.updateLocalPlaylists(newPlaylists, updatedData);
         window.resetForm();
 
+        // The real-time link update is now handled by event listeners on the form inputs.
+        // The logic previously here has been moved to `updateWelcomeMessageLinkRealtime`.
+
         /* @tweakable This is now controlled from index.html */
         let changes = {};
         if (window.sendOnlyChangedFields) {
@@ -146,9 +190,11 @@
         window.postDataToSheet(apiPayload)
             .then(function(result) {
                 if (result.status === 'success') {
-                    console.log('Edit successful. Triggering immediate sync.');
-                    // After a successful edit, sync immediately to get the canonical data
-                    return window.syncDataFromSheet();
+                    console.log('Edit successful. The UI is already updated optimistically.');
+                    // After a successful edit, we trust the optimistic update.
+                    // The background sync will eventually confirm the state.
+                    // We REMOVE the immediate call to syncDataFromSheet() to prevent UI flicker.
+                    // return window.syncDataFromSheet();
                 } else {
                     throw new Error(result.message || 'Failed to edit playlist.');
                 }
@@ -170,35 +216,21 @@
      * @param {HTMLElement} cardElement - The card element to animate/remove.
      */
     function deletePlaylist(playlistId, cardElement) {
-        /* @tweakable Setting to false will cause the item to be removed from the list instantly, without animation. */
+        /* @tweakable When set to false, the item will be removed from the list instantly, without any fade-out animation. */
         const useDeleteAnimation = true;
-        /* @tweakable The duration in milliseconds for the delete animation, if enabled. */
+        /* @tweakable The duration in milliseconds for the delete animation, if enabled. This should match the animation duration in CSS. */
         const deleteAnimationDuration = 300;
 
         const performDelete = () => {
+            // The UI is already updated optimistically. This function now only handles the backend call.
             const playlists = window.getAllPlaylists();
-            const oldPlaylists = JSON.parse(JSON.stringify(playlists));
             const isAdmin = localStorage.getItem('isAdmin') === 'true';
-
-            // Check if this is the last playlist before filtering
-            if (window.removeWelcomeOnLastDelete && !isAdmin && playlists.length === 1) {
-                // If the playlist being deleted is the last one, clear the welcome message flags.
-                if (playlists[0].id.toString() === playlistId.toString()) {
-                    localStorage.removeItem('firstPlaylistCreationTime');
-                    localStorage.removeItem('firstPlaylistWhatsappLink');
-                    localStorage.removeItem('firstPlaylistCreated');
-                    localStorage.removeItem('firstPlaylistMessageShown');
-                    window.dispatchEvent(new CustomEvent('datasync'));
-                }
-            }
-
-            const updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
-            window.updateLocalPlaylists(updatedPlaylists);
 
             window.postDataToSheet({ action: 'delete', id: playlistId })
                 .then(function(result) {
                     if (result.status === 'success') {
                         console.log('Delete successful.');
+                        // On success, we don't need to do anything as the UI is already updated.
                     } else {
                         throw new Error(result.message || 'Failed to delete from server.');
                     }
@@ -206,19 +238,38 @@
                 .catch(function(error) {
                     console.error('Error deleting playlist, reverting UI:', error);
                     window.showAlert('حدث خطأ أثناء الحذف. سيتم استعادة القائمة.');
-                    window.updateLocalPlaylists(oldPlaylists);
+                    // Revert UI by re-syncing from the server.
+                    window.syncDataFromSheet();
                 });
         };
+        
+        // --- INSTANT DELETION LOGIC ---
+        // Get original list for potential revert on API failure
+        const oldPlaylists = JSON.parse(JSON.stringify(window.getAllPlaylists()));
+        const playlists = window.getAllPlaylists();
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
 
-        if (useDeleteAnimation && cardElement) {
-            cardElement.classList.add('deleting');
-            setTimeout(performDelete, deleteAnimationDuration);
-        } else {
-            performDelete();
+        // Handle welcome message logic immediately
+        if (window.removeWelcomeOnLastDelete && !isAdmin && playlists.length === 1) {
+            if (playlists[0].id.toString() === playlistId.toString()) {
+                localStorage.removeItem('firstPlaylistCreationTime');
+                localStorage.removeItem('firstPlaylistWhatsappLink');
+                localStorage.removeItem('firstPlaylistCreated');
+                localStorage.removeItem('firstPlaylistMessageShown');
+                window.dispatchEvent(new CustomEvent('datasync'));
+            }
         }
+
+        // Optimistically remove the playlist from the local state and update the UI *instantly*.
+        const updatedPlaylists = playlists.filter(p => p.id.toString() !== playlistId.toString());
+        window.updateLocalPlaylists(updatedPlaylists);
+        
+        // Start the backend deletion process.
+        performDelete();
     }
 
     // Make functions globally accessible
+    window.updateWelcomeMessageLinkRealtime = updateWelcomeMessageLinkRealtime;
     window.addPlaylist = addPlaylist;
     window.updatePlaylist = updatePlaylist;
     window.deletePlaylist = deletePlaylist;

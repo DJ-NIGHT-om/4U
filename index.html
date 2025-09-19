@@ -169,6 +169,8 @@
         const removeWelcomeOnLastDelete = true;
         /* @tweakable The duration in minutes for which the first playlist message is shown after creation. After this time, it will disappear. */
         const firstPlaylistMessageDurationMinutes = 60;
+        /* @tweakable After an edit, this is the time in milliseconds to ignore server data for that specific card, trusting the local optimistic update. */
+        const optimisticUpdateGracePeriod = 5000;
         if (preventContextMenu) {
             document.addEventListener('contextmenu', e => e.preventDefault());
         }

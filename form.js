@@ -256,6 +256,15 @@
             }
         });
 
+        // --- Attach real-time listeners for WhatsApp link update ---
+        if (typeof window.updateWelcomeMessageLinkRealtime === 'function') {
+            [dom.eventDateInput, dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(input => {
+                if(input) input.addEventListener('input', window.updateWelcomeMessageLinkRealtime);
+            });
+            // Trigger it once on populate to set the initial state
+            window.updateWelcomeMessageLinkRealtime();
+        }
+
         // --- Performance Improvement: Build HTML string for all songs at once ---
         var songs = Array.isArray(playlist.songs) ? playlist.songs : [];
 

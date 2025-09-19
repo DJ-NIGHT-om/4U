@@ -10,6 +10,10 @@
     var lastSyncTime = 0;
     /* @tweakable If true, the background sync will be paused while an add/edit/delete operation is in progress to prevent race conditions. */
     let isSyncPaused = false;
+    let lastOptimisticUpdate = {
+        id: null,
+        time: 0
+    };
 
     /**
      * Syncs data from Google Sheets and updates both main page and archive (user-specific)
@@ -55,6 +59,24 @@
                 var userPlaylists = isAdmin
                     ? processedData.filter(p => p.username) // Admin sees all playlists that have a user
                     : processedData.filter(p => p.username === currentUser);
+
+                // --- Handle Optimistic Update Grace Period ---
+                // If an optimistic update just happened, don't let the server data overwrite it immediately.
+                if (lastOptimisticUpdate.id && (Date.now() - lastOptimisticUpdate.time < window.optimisticUpdateGracePeriod)) {
+                    const localUpdatedPlaylist = allPlaylists.find(p => p.id.toString() === lastOptimisticUpdate.id.toString());
+                    if (localUpdatedPlaylist) {
+                        // Find the corresponding playlist from the server data
+                        const serverIndex = userPlaylists.findIndex(p => p.id.toString() === lastOptimisticUpdate.id.toString());
+                        if (serverIndex > -1) {
+                            // Replace the server version with our recent local version
+                            console.log(`Sync grace period: Prioritizing local data for ID ${lastOptimisticUpdate.id}`);
+                            userPlaylists[serverIndex] = localUpdatedPlaylist;
+                        }
+                    }
+                } else {
+                    // Reset if grace period is over
+                    lastOptimisticUpdate.id = null;
+                }
 
                 var today = new Date();
                 today.setHours(0, 0, 0, 0); // Set to start of today for comparison
@@ -282,6 +304,12 @@
     function updateLocalPlaylists(newPlaylists, playlistToUpdate) {
         // Sort playlists by date before updating the global state and UI
         allPlaylists = newPlaylists.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        // If an update happened, record it for the sync grace period logic
+        if (playlistToUpdate) {
+            lastOptimisticUpdate.id = playlistToUpdate.id;
+            lastOptimisticUpdate.time = Date.now();
+        }
 
         // Persist the changes to local storage immediately
         var currentUser = localStorage.getItem('currentUser');

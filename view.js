@@ -44,6 +44,13 @@
         card.querySelector('.groom-zaffa-text').textContent = playlist.groomZaffa || 'غير محدد';
         card.querySelector('.playlist-songs .songs-content').innerHTML = songsHtml;
         card.querySelector('.playlist-notes .notes-content').innerHTML = notesText;
+
+        // --- Store the new data on the element for future comparisons ---
+        try {
+            card.dataset.playlistData = JSON.stringify(playlist);
+        } catch (e) {
+            console.error("Failed to stringify playlist data for card dataset", e);
+        }
     }
 
     /**
@@ -101,6 +108,14 @@
         var card = document.createElement('div');
         card.className = 'playlist-card card';
         card.setAttribute('data-id', playlist.id);
+        
+        // Store the initial data on the element for comparison during updates
+        try {
+            card.dataset.playlistData = JSON.stringify(playlist);
+        } catch(e) {
+            console.error("Failed to stringify playlist data for card dataset", e);
+            card.dataset.playlistData = '{}';
+        }
         
         var isAdmin = localStorage.getItem('isAdmin') === 'true';
         var creatorInfoHtml = '';
@@ -163,8 +178,12 @@
             const existingCard = existingCardMap.get(playlistId);
 
             if (existingCard) {
-                // It exists, so update it if data has changed
-                const currentData = JSON.parse(existingCard.dataset.playlistData || '{}');
+                // It exists, so update it only if data has changed
+                let currentData = {};
+                try {
+                    currentData = JSON.parse(existingCard.dataset.playlistData || '{}');
+                } catch(e) { /* ignore parse error, will default to update */ }
+                
                 // Compare new data with the stored data on the element
                 if (JSON.stringify(currentData) !== JSON.stringify(playlist)) {
                     updateCardInPlace(existingCard, playlist);
