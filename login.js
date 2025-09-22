@@ -136,7 +136,7 @@
                         window.showAlert('حدث خطأ أثناء تسجيل الدخول. يرجى المحاولة مرة أخرى.');
                     })
                     .finally(function() {
-                        // The loading indicator is now hidden automatically by a timeout in showLoading.
+                        window.showLoading(false);
                     });
             });
         }
@@ -192,7 +192,7 @@
                         window.showAlert('حدث خطأ أثناء إنشاء الحساب. يرجى المحاولة مرة أخرى.');
                     })
                     .finally(function() {
-                        // The loading indicator is now hidden automatically by a timeout in showLoading.
+                        window.showLoading(false);
                     });
             });
         }
@@ -240,7 +240,7 @@
                         window.showAlert('حدث خطأ أثناء إعادة تعيين كلمة المرور. يرجى المحاولة مرة أخرى.');
                     })
                     .finally(function() {
-                        // The loading indicator is now hidden automatically by a timeout in showLoading.
+                        window.showLoading(false);
                     });
             });
         }

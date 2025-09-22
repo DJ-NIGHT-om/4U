@@ -125,7 +125,7 @@
 
 .playlist-card-header {
     display: flex;
-    justify-content: flex-start;
+    justify-content: flex-start; /* Changed from space-between */
     align-items: center;
     margin-bottom: 1rem;
     border-bottom: 1px solid var(--border-color);
@@ -134,10 +134,27 @@
     gap: var(--card-header-gap, 1.5rem);
 }
 
+/* @tweakable The minimum width for the text content area in a card before it wraps. */
+:root { --card-content-min-width: 100px; }
+
+.playlist-card-header > div {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Gap between icon and text */
+    flex-grow: 1;
+    flex-basis: var(--card-content-min-width);
+    word-break: break-word; /* Ensure long text wraps */
+    min-width: 0; /* Allow flex item to shrink below its content size */
+}
+
+.playlist-card-header h3, .playlist-card-header span {
+    margin: 0;
+    padding: 0;
+}
+
 .playlist-card-header h3 {
     color: var(--primary-color);
     font-size: 1.1rem;
-    margin-bottom: 0;
     font-weight: bold;
     color: #0092cb;
 }
@@ -157,17 +174,24 @@
     margin-bottom: 0;
     color: black;
     display: flex;
-    align-items: center;
+    align-items: flex-start; /* Align to top for multi-line text */
     font-weight: bold;
     background-color: #E3FCE0;
+    min-width: 0; /* Allow flex item to shrink properly */
 }
 
 .playlist-card-info p span {
     color: var(--text-color);
+    word-break: break-word; /* Allow long text to wrap */
+    flex: 1; /* Allow value to take remaining space */
+    min-width: var(--card-content-min-width);
+    /* The value will now wrap and expand vertically as needed */
 }
 
 .playlist-card-info p strong {
     color: var(--primary-color);
+    margin-left: 4px; /* Space between label and value */
+    white-space: nowrap; /* Prevent label from wrapping */
 }
 
 .playlist-notes {

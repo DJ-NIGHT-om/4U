@@ -126,9 +126,13 @@
         card.innerHTML =
             creatorInfoHtml +
             '<div class="playlist-card-header">' +
-                '<h3><i class="fas fa-map-marker-alt icon"></i> <span class="location-text">' + (playlist.location || 'مكان غير محدد') + '</span></h3>' +
-                '<span><i class="fas fa-calendar-alt icon"></i> <span class="date-text">' + dateString +
-                (dayName ? ' <span class="day-name">' + dayName + '</span>' : '') + '</span></span>' +
+                '<div>' + // Wrapper for location
+                    '<h3><i class="fas fa-map-marker-alt icon"></i> <span class="location-text">' + (playlist.location || 'مكان غير محدد') + '</span></h3>' +
+                '</div>' +
+                '<div>' + // Wrapper for date
+                    '<span><i class="fas fa-calendar-alt icon"></i> <span class="date-text">' + dateString +
+                    (dayName ? ' <span class="day-name">' + dayName + '</span>' : '') + '</span></span>' +
+                '</div>' +
             '</div>' +
             '<div class="playlist-card-info">' +
                 '<p><i class="fas fa-phone icon"></i> <strong>رقم الهاتف:</strong> <span class="phone-text">' + (playlist.phoneNumber || 'غير محدد') + '</span></p>' +

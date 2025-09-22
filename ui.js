@@ -64,7 +64,9 @@
             return;
         }
         
-        /* @tweakable The maximum time in milliseconds the 'Loading...' screen will be visible. */
+        /* @tweakable If true, the loading screen will hide itself automatically after a short time. Set to false for manual control. */
+        const useLoadingTimeout = false;
+        /* @tweakable The maximum time in milliseconds the 'Loading...' screen will be visible if useLoadingTimeout is true. */
         const loadingScreenMaxDuration = 1000;
 
         var loadingOverlay = getDOMElements().loadingOverlay;
@@ -73,10 +75,12 @@
 
             if (show) {
                 loadingOverlay.classList.remove('hidden');
-                // Set a timeout to hide the overlay automatically
-                loadingTimeout = setTimeout(function() {
-                    loadingOverlay.classList.add('hidden');
-                }, loadingScreenMaxDuration);
+                if (useLoadingTimeout) {
+                    // Set a timeout to hide the overlay automatically
+                    loadingTimeout = setTimeout(function() {
+                        loadingOverlay.classList.add('hidden');
+                    }, loadingScreenMaxDuration);
+                }
             } else {
                 loadingOverlay.classList.add('hidden');
             }
