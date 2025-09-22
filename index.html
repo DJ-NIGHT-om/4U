@@ -171,6 +171,8 @@
         const firstPlaylistMessageDurationMinutes = 60;
         /* @tweakable After an edit, this is the time in milliseconds to ignore server data for that specific card, trusting the local optimistic update. */
         const optimisticUpdateGracePeriod = 5000;
+        /* @tweakable When true, the app checks sessionStorage for data pre-fetched on the login screen for a faster initial load. */
+        const usePrefetchedData = true;
         if (preventContextMenu) {
             document.addEventListener('contextmenu', e => e.preventDefault());
         }

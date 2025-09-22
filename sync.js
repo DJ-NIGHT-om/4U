@@ -16,6 +16,98 @@
     };
 
     /**
+     * Processes raw data from the sheet, parsing songs and cleaning up notes.
+     * @param {Array} data - The raw data array from Google Sheets.
+     * @returns {Array} The processed data.
+     */
+    function processSheetData(data) {
+        return data.map(playlist => {
+            if (playlist.songs && typeof playlist.songs === 'string') {
+                try {
+                    playlist.songs = JSON.parse(playlist.songs);
+                } catch (e) {
+                    playlist.songs = []; // Default to empty array on parse error
+                }
+            }
+            if (playlist.notes && typeof playlist.notes === 'string' && playlist.notes.startsWith("'")) {
+                playlist.notes = playlist.notes.substring(1);
+            }
+            return playlist;
+        });
+    }
+
+    /**
+     * Filters playlists for the current user and handles archiving of past events.
+     * @param {Array} userPlaylists - The list of playlists for the current user.
+     * @returns {{currentPlaylists: Array, playlistsToArchive: Array}}
+     */
+    function filterAndArchivePlaylists(userPlaylists) {
+        const appToday = window.getAppToday();
+        const localArchive = JSON.parse(localStorage.getItem('archivedPlaylists')) || [];
+        const localArchiveIds = new Set(localArchive.map(p => p.id.toString()));
+
+        let currentPlaylists = [];
+        let playlistsToArchive = [];
+
+        userPlaylists.forEach(playlist => {
+            if (!playlist.date || playlist.date.trim() === '') return;
+            
+            const eventDate = new Date(playlist.date);
+            const eventDateUTC = new Date(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate());
+
+            if (!isNaN(eventDateUTC.getTime()) && eventDateUTC < appToday) {
+                if (!localArchiveIds.has(playlist.id.toString())) {
+                    playlistsToArchive.push(playlist);
+                }
+            } else {
+                currentPlaylists.push(playlist);
+            }
+        });
+
+        // Update local archive if there are new items to archive
+        if (playlistsToArchive.length > 0) {
+            const updatedArchive = localArchive.concat(playlistsToArchive);
+            localStorage.setItem('archivedPlaylists', JSON.stringify(updatedArchive));
+            // Trigger archive page update if it's open
+            if (window.location.pathname.includes('user.html')) {
+                 window.dispatchEvent(new CustomEvent('archiveUpdate'));
+            }
+        }
+        
+        // Clean up archive: remove items that no longer exist in the sheet
+        const sheetIds = new Set(userPlaylists.map(p => p.id.toString()));
+        const cleanedArchive = localArchive.filter(p => sheetIds.has(p.id.toString()));
+        if (cleanedArchive.length !== localArchive.length) {
+            localStorage.setItem('archivedPlaylists', JSON.stringify(cleanedArchive));
+        }
+
+        return { currentPlaylists };
+    }
+
+    /**
+     * Updates the main UI with the current list of playlists.
+     * @param {Array} currentPlaylists - The playlists to display.
+     * @param {string} currentUser - The username of the current user.
+     * @param {boolean} isAdmin - Whether the current user is an admin.
+     */
+    function updateMainUI(currentPlaylists, currentUser, isAdmin) {
+        allPlaylists = currentPlaylists.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        // Cache the latest active playlists for faster initial load
+        const cacheKey = 'cachedPlaylists_' + (isAdmin ? 'admin' : currentUser);
+        localStorage.setItem(cacheKey, JSON.stringify(allPlaylists));
+        
+        if (window.location.pathname.includes('index.html') || window.location.pathname === '/') {
+            const dom = window.getDOMElements();
+            if (dom.playlistSection) {
+                window.renderPlaylists(dom.playlistSection, allPlaylists);
+            }
+            window.dispatchEvent(new CustomEvent('datasync'));
+        }
+    }
+
+
+    /**
      * Syncs data from Google Sheets and updates both main page and archive (user-specific)
      */
     function syncDataFromSheet() {
@@ -24,153 +116,61 @@
             return Promise.resolve();
         }
 
-        var currentUser = localStorage.getItem('currentUser');
-        var isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const currentUser = localStorage.getItem('currentUser');
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
         if (!currentUser) return Promise.resolve();
 
         // Prevent excessive sync calls
-        var now = Date.now();
-        if (now - lastSyncTime < 1000) {
+        if (Date.now() - lastSyncTime < 1000) {
             return Promise.resolve();
         }
-        lastSyncTime = now;
+        lastSyncTime = Date.now();
 
         return window.fetchPlaylistsFromSheet()
             .then(function(data) {
-                // Ensure songs are parsed correctly on fetch
-                const processedData = data.map(playlist => {
-                    if (playlist.songs && typeof playlist.songs === 'string') {
-                        try {
-                            playlist.songs = JSON.parse(playlist.songs);
-                        } catch (e) {
-                            playlist.songs = []; // Default to empty array on parse error
-                        }
-                    }
-                    // Remove leading apostrophe from notes if it exists, which is used to force string type in Sheets
-                    if (playlist.notes && typeof playlist.notes === 'string' && playlist.notes.startsWith("'")) {
-                        playlist.notes = playlist.notes.substring(1);
-                    }
-                    return playlist;
-                });
-                
+                const processedData = processSheetData(data);
                 allSheetData = processedData; // Store all fetched data
 
                 // Filter data based on user role
-                var userPlaylists = isAdmin
+                let userPlaylists = isAdmin
                     ? processedData.filter(p => p.username) // Admin sees all playlists that have a user
                     : processedData.filter(p => p.username === currentUser);
 
                 // --- Handle Optimistic Update Grace Period ---
-                // If an optimistic update just happened, don't let the server data overwrite it immediately.
                 if (lastOptimisticUpdate.id && (Date.now() - lastOptimisticUpdate.time < window.optimisticUpdateGracePeriod)) {
                     const localUpdatedPlaylist = allPlaylists.find(p => p.id.toString() === lastOptimisticUpdate.id.toString());
                     if (localUpdatedPlaylist) {
-                        // Find the corresponding playlist from the server data
                         const serverIndex = userPlaylists.findIndex(p => p.id.toString() === lastOptimisticUpdate.id.toString());
                         if (serverIndex > -1) {
-                            // Replace the server version with our recent local version
-                            console.log(`Sync grace period: Prioritizing local data for ID ${lastOptimisticUpdate.id}`);
                             userPlaylists[serverIndex] = localUpdatedPlaylist;
                         }
                     }
                 } else {
-                    // Reset if grace period is over
                     lastOptimisticUpdate.id = null;
                 }
 
-                var today = new Date();
-                today.setHours(0, 0, 0, 0); // Set to start of today for comparison
-                // Use the new timezone-aware "today" for archiving logic
-                var appToday = window.getAppToday();
-
-                var currentPlaylists = [];
-                var playlistsToArchive = [];
-                var localArchive = JSON.parse(localStorage.getItem('archivedPlaylists')) || [];
-                var localArchiveIds = {};
-                
-                // Create a lookup for archived IDs
-                for (var i = 0; i < localArchive.length; i++) {
-                    localArchiveIds[localArchive[i].id.toString()] = true;
-                }
-
+                let currentPlaylists;
                 if (isAdmin) {
-                    // Admin View: Show all non-archived playlists from all users.
-                    // We don't perform archiving actions for the admin.
-                    currentPlaylists = userPlaylists.filter(function(playlist) {
+                    const appToday = window.getAppToday();
+                    currentPlaylists = userPlaylists.filter(playlist => {
                         if (!playlist.date || playlist.date.trim() === '') return false;
-                        var eventDate = new Date(playlist.date);
-                        var eventDateUTC = new Date(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate());
+                        const eventDate = new Date(playlist.date);
+                        const eventDateUTC = new Date(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate());
                         return !isNaN(eventDateUTC.getTime()) && eventDateUTC >= appToday;
                     });
-
                 } else {
-                    // Regular User View: Handle archiving
-                    userPlaylists.forEach(function(playlist) {
-                        if (!playlist.date || playlist.date.trim() === '') return;
-                        
-                        var eventDate = new Date(playlist.date);
-                        var eventDateUTC = new Date(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate());
-
-                        if (!isNaN(eventDateUTC.getTime()) && eventDateUTC < appToday) {
-                            if (!localArchiveIds[playlist.id.toString()]) {
-                                playlistsToArchive.push(playlist);
-                            }
-                        } else {
-                            currentPlaylists.push(playlist);
-                        }
-                    });
-
-                    // Update local archive if there are new items to archive
-                    if (playlistsToArchive.length > 0) {
-                        localArchive = localArchive.concat(playlistsToArchive);
-                        localStorage.setItem('archivedPlaylists', JSON.stringify(localArchive));
-                    }
-
-                    // Trigger archive page update if it's open
-                    if (window.location.pathname.indexOf('user.html') !== -1) {
-                         window.dispatchEvent(new CustomEvent('archiveUpdate'));
-                    }
+                    const result = filterAndArchivePlaylists(userPlaylists);
+                    currentPlaylists = result.currentPlaylists;
                 }
 
-                // Check for deleted items in Google Sheet and remove from archive if user is not admin
-                if (!isAdmin) {
-                    var sheetIds = {};
-                    for (var i = 0; i < userPlaylists.length; i++) {
-                        sheetIds[userPlaylists[i].id.toString()] = true;
-                    }
-                    localArchive = localArchive.filter(function(p) {
-                        return sheetIds[p.id.toString()];
-                    });
-                    localStorage.setItem('archivedPlaylists', JSON.stringify(localArchive));
-                }
+                updateMainUI(currentPlaylists, currentUser, isAdmin);
 
-                // Update main page display
-                var previousCount = allPlaylists.length;
-                allPlaylists = currentPlaylists.sort((a, b) => new Date(a.date) - new Date(b.date));
-                
-                // Cache the latest active playlists for faster initial load
-                var cacheKey = 'cachedPlaylists_' + (isAdmin ? 'admin' : currentUser);
-                localStorage.setItem(cacheKey, JSON.stringify(allPlaylists));
-                
-                // Only update UI if we're on the main page
-                if (window.location.pathname.indexOf('index.html') !== -1 || window.location.pathname === '/') {
-                    var dom = window.getDOMElements();
-                    if (dom.playlistSection) {
-                        window.renderPlaylists(dom.playlistSection, allPlaylists);
-                    }
-                    window.dispatchEvent(new CustomEvent('datasync'));
-                }
-
-                // Log sync activity for debugging
-                console.log('Sync completed - Role:', isAdmin ? 'Admin' : 'User', 'Current playlists:', allPlaylists.length);
+                console.log('Sync completed - Role:', isAdmin ? 'Admin' : 'User', 'Current playlists:', currentPlaylists.length);
             })
             .catch(function(error) {
                 console.error('Error syncing data:', error);
-                // Don't show error to user for background sync
             })
             .finally(function() {
-                // The loading indicator is hidden automatically by a timeout in showLoading,
-                // but we can call hide here again to be safe, especially if the sync was very fast.
                 window.showLoading(false);
             });
     }
@@ -229,63 +229,92 @@
         var isAdmin = localStorage.getItem('isAdmin') === 'true';
         if (!currentUser) return;
 
-        // 1. Load from local cache and display immediately for a fast UI response
-        try {
-            var cacheKey = 'cachedPlaylists_' + (isAdmin ? 'admin' : currentUser);
-            var cachedPlaylists = JSON.parse(localStorage.getItem(cacheKey)) || [];
-            if (cachedPlaylists.length > 0) {
-                allPlaylists = cachedPlaylists;
-                var dom = window.getDOMElements();
-                window.renderPlaylists(dom.playlistSection, allPlaylists);
-                window.dispatchEvent(new CustomEvent('datasync'));
-            } else {
-                // Only show loading indicator if there's no cached data to display
-                window.showLoading(true);
+        let dataLoaded = false;
+        
+        // 1. Try to load pre-fetched data from sessionStorage for the fastest load
+        if (window.usePrefetchedData) {
+            try {
+                const prefetchedData = sessionStorage.getItem('prefetched_playlists');
+                if (prefetchedData) {
+                    allSheetData = JSON.parse(prefetchedData);
+                    // Clear it so it's not used again on a page refresh
+                    sessionStorage.removeItem('prefetched_playlists');
+                    // Process and render this data immediately
+                    processAndRenderData(allSheetData);
+                    console.log("Initialized with prefetched data.");
+                    dataLoaded = true;
+                }
+            } catch (e) {
+                console.error("Error loading prefetched playlists:", e);
             }
-        } catch (e) {
-            console.error("Error loading cached playlists:", e);
-            window.showLoading(true); // Show loading if cache fails
+        }
+
+
+        // 2. If no pre-fetched data, load from local cache for a fast UI response
+        if (!dataLoaded) {
+            try {
+                var cacheKey = 'cachedPlaylists_' + (isAdmin ? 'admin' : currentUser);
+                var cachedPlaylists = JSON.parse(localStorage.getItem(cacheKey)) || [];
+                if (cachedPlaylists.length > 0) {
+                    allPlaylists = cachedPlaylists;
+                    var dom = window.getDOMElements();
+                    window.renderPlaylists(dom.playlistSection, allPlaylists);
+                    window.dispatchEvent(new CustomEvent('datasync'));
+                    dataLoaded = true;
+                }
+            } catch (e) {
+                console.error("Error loading cached playlists:", e);
+            }
         }
         
-        // 2. Start the sync process to fetch fresh data from the sheet in the background.
+        // 3. Show loading indicator only if no data could be displayed immediately
+        if (!dataLoaded) {
+            window.showLoading(true);
+        }
+        
+        // 4. Start the sync process to fetch fresh data from the sheet in the background.
         // The sync function will handle rendering and hiding the loading indicator.
         syncDataFromSheet();
     }
 
     /**
-     * Stores playlists in local storage and sends a request to delete them from the sheet.
-     * @param {Array} playlistsToArchive - An array of playlist objects to archive.
+     * Processes raw sheet data and renders it to the UI.
+     * This is a helper for initializePage to handle prefetched data.
+     * @param {Array} rawData - The raw data from the sheet.
      */
-    function archivePlaylists(playlistsToArchive) {
-        try {
-            // Get current local archive
-            var localArchive = JSON.parse(localStorage.getItem('archivedPlaylists')) || [];
-            
-            // Remove any existing entries with the same IDs to prevent duplicates
-            var idsToArchive = [];
-            for (var i = 0; i < playlistsToArchive.length; i++) {
-                idsToArchive.push(playlistsToArchive[i].id.toString());
+    function processAndRenderData(rawData) {
+        // This logic is extracted from syncDataFromSheet to be reusable
+        var currentUser = localStorage.getItem('currentUser');
+        var isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+        const processedData = processSheetData(rawData);
+
+        var userPlaylists = isAdmin
+            ? processedData.filter(p => p.username)
+            : processedData.filter(p => p.username === currentUser);
+
+        var appToday = window.getAppToday();
+        var currentPlaylists = [];
+
+        userPlaylists.forEach(function(playlist) {
+            if (!playlist.date || playlist.date.trim() === '') return;
+            var eventDate = new Date(playlist.date);
+            var eventDateUTC = new Date(eventDate.getUTCFullYear(), eventDate.getUTCMonth(), eventDate.getUTCDate());
+            if (!isNaN(eventDateUTC.getTime()) && eventDateUTC >= appToday) {
+                currentPlaylists.push(playlist);
             }
-            
-            localArchive = localArchive.filter(function(p) {
-                return idsToArchive.indexOf(p.id.toString()) === -1;
-            });
-            
-            // Add new playlists to local archive
-            var updatedArchive = localArchive.concat(playlistsToArchive);
-            localStorage.setItem('archivedPlaylists', JSON.stringify(updatedArchive));
-            
-            // Send request to delete from sheet
-            var idsToDelete = [];
-            for (var i = 0; i < playlistsToArchive.length; i++) {
-                idsToDelete.push(playlistsToArchive[i].id);
-            }
-            
-            return window.postDataToSheet({ action: 'archive', ids: idsToDelete });
-        } catch(error) {
-            console.error('Error archiving playlists in Google Sheet:', error);
-            window.showAlert('حدث خطأ أثناء أرشفة بعض القوائم. سيتم إعادة المحاولة في التحميل القادم.');
+        });
+
+        allPlaylists = currentPlaylists.sort((a, b) => new Date(a.date) - new Date(b.date));
+        
+        var cacheKey = 'cachedPlaylists_' + (isAdmin ? 'admin' : currentUser);
+        localStorage.setItem(cacheKey, JSON.stringify(allPlaylists));
+        
+        var dom = window.getDOMElements();
+        if (dom.playlistSection) {
+            window.renderPlaylists(dom.playlistSection, allPlaylists);
         }
+        window.dispatchEvent(new CustomEvent('datasync'));
     }
 
     function getAllPlaylists() {
@@ -338,9 +367,18 @@
     window.startRealTimeSync = startRealTimeSync;
     window.stopRealTimeSync = stopRealTimeSync;
     window.initializePage = initializePage;
-    window.archivePlaylists = archivePlaylists;
     window.getAllPlaylists = getAllPlaylists;
     window.getAllSheetData = getAllSheetData;
     window.updateLocalPlaylists = updateLocalPlaylists;
     window.setSyncPaused = setSyncPaused;
 })();
+
+// Make functions globally accessible
+window.syncDataFromSheet = syncDataFromSheet;
+window.startRealTimeSync = startRealTimeSync;
+window.stopRealTimeSync = stopRealTimeSync;
+window.initializePage = initializePage;
+window.getAllPlaylists = getAllPlaylists;
+window.getAllSheetData = getAllSheetData;
+window.updateLocalPlaylists = updateLocalPlaylists;
+window.setSyncPaused = setSyncPaused;

@@ -7,6 +7,36 @@
     /* @tweakable The password for the application administrator. */
     const ADMIN_PASSWORD = 'DJNIGHT3311';
     
+    /* @tweakable If true, shows a confirmation alert after successful registration before redirecting. Set to false for immediate redirection to improve speed. */
+    const showSuccessAlertOnRegister = false;
+    
+    // Pre-fetch data on login page load to speed up main page rendering
+    /* @tweakable When true, data is fetched in the background on the login page to speed up the initial load of the main page. */
+    const prefetchDataOnLogin = true;
+
+    if (prefetchDataOnLogin) {
+        // Use a self-invoking function to avoid polluting the global scope
+        (function() {
+            // Check if data is already being fetched to prevent multiple requests
+            if (window.isDataPrefetching) return;
+            window.isDataPrefetching = true;
+
+            window.fetchPlaylistsFromSheet()
+                .then(function(data) {
+                    sessionStorage.setItem('prefetched_playlists', JSON.stringify(data));
+                    console.log('Data prefetched successfully on login page.');
+                })
+                .catch(function(error) {
+                    console.error('Prefetch failed on login page:', error);
+                    // Clear any partial data if fetch fails
+                    sessionStorage.removeItem('prefetched_playlists');
+                })
+                .finally(function() {
+                    window.isDataPrefetching = false;
+                });
+        })();
+    }
+
     // Register service worker for offline functionality
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function() {
@@ -179,10 +209,16 @@
                         if (result.status === 'success') {
                             localStorage.setItem('currentUser', username);
                             localStorage.setItem('currentUserPassword', password);
-                            window.showAlert('تم إنشاء الحساب بنجاح! سيتم توجيهك إلى الصفحة الرئيسية.')
-                                .then(function() {
-                                    window.location.href = 'index.html';
-                                });
+                            
+                            if (showSuccessAlertOnRegister) {
+                                window.showAlert('تم إنشاء الحساب بنجاح! سيتم توجيهك إلى الصفحة الرئيسية.')
+                                    .then(function() {
+                                        window.location.href = 'index.html';
+                                    });
+                            } else {
+                                // Redirect immediately for a faster user experience
+                                window.location.href = 'index.html';
+                            }
                         } else {
                             window.showAlert(result.message || 'حدث خطأ أثناء إنشاء الحساب');
                         }
