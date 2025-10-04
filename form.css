@@ -1,383 +1,263 @@
-// --- Functions for managing the playlist form ---
-(function() {
-    'use strict';
-
-    /**
-     * Attaches an auto-resize listener to a textarea element.
-     */
-    function enableAutoresize(textarea) {
-        if (!textarea) return;
-        
-        const autoresizeHandler = () => {
-            textarea.style.height = 'auto';
-            const buffer = 2; 
-            textarea.style.height = (textarea.scrollHeight + buffer) + 'px';
-        };
-
-        textarea.addEventListener('input', autoresizeHandler);
-        textarea.addEventListener('change', autoresizeHandler); 
-        setTimeout(autoresizeHandler, 10); 
-    }
-    
-    function updateDayNameDisplay(dateInput, dayNameDisplay) {
-        if (!dateInput || !dayNameDisplay) return;
-        if (dateInput.value) {
-            var selectedDate = new Date(dateInput.value);
-            if (!isNaN(selectedDate.getTime())) {
-                var dayName = window.getArabicDayName(selectedDate);
-                dayNameDisplay.textContent = dayName;
-            } else {
-                dayNameDisplay.textContent = '';
-            }
-        } else {
-            dayNameDisplay.textContent = '';
-        }
-    }
-
-    const dateAvailableMessage = "التاريخ غير محجوز لحد الأن";
-    const dateBookedMessage = "للأسف التاريخ محجوز";
-    const dateInPastMessage = "أدخلت تاريخاً قديماً";
-
-    function setFormFieldsDisabled(disabled) {
-        const dom = window.getDOMElements();
-        const inputsToToggle = [
-            dom.eventLocationInput,
-            dom.phoneNumberInput,
-            dom.brideZaffaInput,
-            dom.groomZaffaInput
-        ];
-
-        inputsToToggle.forEach(input => {
-            if (input) input.disabled = disabled;
-        });
-        
-        const songGroups = dom.songsContainer.querySelectorAll('.song-input-group');
-        songGroups.forEach(group => {
-            const input = group.querySelector('.song-input');
-            const removeBtn = group.querySelector('.remove-song-btn');
-            if (input) input.disabled = disabled;
-            if (removeBtn) removeBtn.disabled = disabled;
-        });
-
-        if (dom.addSongBtn) dom.addSongBtn.disabled = disabled;
-        if (dom.saveBtn) dom.saveBtn.disabled = disabled;
-    }
-
-    function updateDateAvailabilityMessage(isAvailable) {
-        var dom = window.getDOMElements();
-        if (!dom.dateAvailabilityMessage) return;
-
-        if (isAvailable === null) {
-            dom.dateAvailabilityMessage.className = 'availability-message';
-            dom.dateAvailabilityMessage.textContent = '';
-            dom.dateAvailabilityMessage.style.display = 'none';
-            setFormFieldsDisabled(false);
-        } else if (isAvailable === 'past') {
-            dom.dateAvailabilityMessage.className = 'availability-message booked';
-            dom.dateAvailabilityMessage.textContent = dateInPastMessage;
-            dom.dateAvailabilityMessage.style.display = 'block';
-            setFormFieldsDisabled(true);
-        } else if (isAvailable) {
-            dom.dateAvailabilityMessage.className = 'availability-message available';
-            dom.dateAvailabilityMessage.textContent = dateAvailableMessage;
-            dom.dateAvailabilityMessage.style.display = 'block';
-            setFormFieldsDisabled(false);
-        } else {
-            dom.dateAvailabilityMessage.className = 'availability-message booked';
-            dom.dateAvailabilityMessage.textContent = dateBookedMessage;
-            dom.dateAvailabilityMessage.style.display = 'block';
-            setFormFieldsDisabled(true);
-        }
-    }
-
-    function showForm(show) {
-        var elements = window.getDOMElements();
-        var formSection = elements.formSection;
-        var showFormBtn = elements.showFormBtn;
-        
-        if (formSection) {
-            formSection.classList.toggle('hidden', !show);
-        }
-        if (showFormBtn) {
-            showFormBtn.classList.toggle('hidden', show);
-        }
-        if (show) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-    }
-
-    function addSongField(container, focusNew, value) {
-        value = value || '';
-        var group = document.createElement('div');
-        group.className = 'song-input-group';
-
-        var inputContainer = document.createElement('div');
-        inputContainer.className = 'auto-expand-input-container song-input-container';
-        inputContainer.dataset.value = value;
-
-        var input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'song-input auto-expand-input';
-        input.placeholder = 'أدخل اسم الأغنية';
-        input.value = value;
-        
-        input.addEventListener('input', () => {
-            inputContainer.dataset.value = input.value;
-        });
-
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                requestAddSongField();
-            }
-        });
-
-        var removeBtn = document.createElement('button');
-        removeBtn.type = 'button';
-        removeBtn.className = 'remove-song-btn';
-        removeBtn.innerHTML = '<i class="fas fa-times-circle"></i>';
-        removeBtn.onclick = function() {
-            if (input.value.trim() === '') {
-                if (group.parentNode) group.parentNode.removeChild(group);
-                return;
-            }
-            
-            window.showConfirm(window.songDeleteConfirmationMessage, 'تأكيد الحذف')
-                .then(function(confirmed) {
-                    if (confirmed) {
-                        if (group.parentNode) group.parentNode.removeChild(group);
-                    }
-                });
-        };
-
-        inputContainer.appendChild(input);
-        group.appendChild(inputContainer);
-        group.appendChild(removeBtn);
-        container.appendChild(group);
-
-        if (focusNew) input.focus();
-    }
-
-    const maxSongs = 10;
-    const preventEmptySongOnAdd = true;
-
-    function requestAddSongField() {
-        const dom = window.getDOMElements();
-        const songInputs = dom.songsContainer.querySelectorAll('.song-input');
-        
-        if (songInputs.length >= maxSongs) {
-            window.showAlert('لا يمكن إضافة أكثر من ' + maxSongs + ' أغاني.');
-            return;
-        }
-
-        if (preventEmptySongOnAdd) {
-            if (songInputs.length > 0) {
-                const lastSongInput = songInputs[songInputs.length - 1];
-                if (lastSongInput && lastSongInput.value.trim() === '') {
-                    lastSongInput.focus();
-                    return;
-                }
-            }
-        }
-        addSongField(dom.songsContainer, true);
-    }
-    
-    function resetForm() {
-        var dom = window.getDOMElements();
-        if (!dom.playlistForm) return;
-
-        dom.playlistForm.reset();
-        dom.songsContainer.innerHTML = '';
-        dom.playlistIdInput.value = '';
-        dom.notesInput.value = '';
-        dom.formTitle.innerHTML = '<i class="fas fa-plus-circle"></i> إضافة قائمة جديدة';
-        dom.saveBtn.textContent = 'حفظ البيانات';
-        dom.dayNameDisplay.textContent = '';
-        updateDateAvailabilityMessage(null);
-        
-        [dom.notesInput].forEach(enableAutoresize);
-        [dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(setupAutoExpand);
-
-        /* @tweakable The number of empty song fields to show when creating a new playlist. Must be at least 1. */
-        const initialSongFields = 1;
-        for (let i = 0; i < Math.max(1, initialSongFields); i++) {
-            addSongField(dom.songsContainer, false);
-        }
-
-        updateDayNameDisplay(dom.eventDateInput, dom.dayNameDisplay);
-        
-        showForm(false);
-    }
-
-    function populateEditForm(playlist) {
-        var dom = window.getDOMElements();
-        
-        // Manually reset form parts instead of calling resetForm() to avoid flicker
-        if (dom.playlistForm) {
-            dom.playlistForm.reset();
-        }
-        dom.playlistIdInput.value = '';
-        dom.notesInput.value = '';
-        dom.dayNameDisplay.textContent = '';
-        updateDateAvailabilityMessage(null);
-
-        showForm(true);
-        
-        dom.formTitle.innerHTML = '<i class="fas fa-edit"></i> تعديل القائمة';
-        dom.saveBtn.textContent = 'حفظ التعديلات';
-        dom.playlistIdInput.value = playlist.id;
-
-        var eventDate = new Date(playlist.date);
-        if (!isNaN(eventDate.getTime())) {
-            const adjustedDate = new Date(eventDate.getTime() + (4 * 3600000));
-            const yyyy = adjustedDate.getUTCFullYear();
-            const mm = String(adjustedDate.getUTCMonth() + 1).padStart(2, '0');
-            const dd = String(adjustedDate.getUTCDate()).padStart(2, '0');
-            dom.eventDateInput.value = `${yyyy}-${mm}-${dd}`;
-            updateDayNameDisplay(dom.eventDateInput, dom.dayNameDisplay);
-        } else {
-            dom.eventDateInput.value = '';
-            dom.dayNameDisplay.textContent = '';
-        }
-
-        dom.eventLocationInput.value = playlist.location || '';
-        dom.phoneNumberInput.value = playlist.phoneNumber || '';
-        dom.brideZaffaInput.value = playlist.brideZaffa || '';
-        dom.groomZaffaInput.value = playlist.groomZaffa || '';
-        dom.notesInput.value = playlist.notes || '';
-        
-        if (dom.notesInput) {
-            setTimeout(() => dom.notesInput.dispatchEvent(new Event('change')), 10);
-        }
-        
-        [dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(input => {
-            if (input) {
-                setTimeout(() => input.dispatchEvent(new Event('input')), 10);
-            }
-        });
-
-        // --- Attach real-time listeners for WhatsApp link update ---
-        if (typeof window.updateWelcomeMessageLinkRealtime === 'function') {
-            [dom.eventDateInput, dom.eventLocationInput, dom.brideZaffaInput, dom.groomZaffaInput].forEach(input => {
-                if(input) input.addEventListener('input', window.updateWelcomeMessageLinkRealtime);
-            });
-            // Trigger it once on populate to set the initial state
-            window.updateWelcomeMessageLinkRealtime();
-        }
-
-        // --- Performance Improvement: Build HTML string for all songs at once ---
-        var songs = Array.isArray(playlist.songs) ? playlist.songs : [];
-
-        var songsHtml = songs.map(song => `
-            <div class="song-input-group">
-                <div class="auto-expand-input-container song-input-container" data-value="${song}">
-                    <input type="text" class="song-input auto-expand-input" placeholder="أدخل اسم الأغنية" value="${song}">
-                </div>
-                <button type="button" class="remove-song-btn"><i class="fas fa-times-circle"></i></button>
-            </div>
-        `).join('');
-
-        // Add one empty song field if below max limit
-        if (songs.length < maxSongs) {
-            songsHtml += `
-                <div class="song-input-group">
-                    <div class="auto-expand-input-container song-input-container" data-value="">
-                        <input type="text" class="song-input auto-expand-input" placeholder="أدخل اسم الأغنية" value="">
-                    </div>
-                    <button type="button" class="remove-song-btn"><i class="fas fa-times-circle"></i></button>
-                </div>
-            `;
-        }
-
-        dom.songsContainer.innerHTML = songsHtml;
-        
-        // Add event listeners after populating
-        dom.songsContainer.querySelectorAll('.song-input-group').forEach(group => {
-            const input = group.querySelector('.song-input');
-            const removeBtn = group.querySelector('.remove-song-btn');
-            const inputContainer = group.querySelector('.auto-expand-input-container');
-
-            if (input) {
-                input.addEventListener('input', () => {
-                    inputContainer.dataset.value = input.value;
-                });
-                input.addEventListener('keydown', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        requestAddSongField();
-                    }
-                });
-            }
-            if (removeBtn) {
-                removeBtn.onclick = function() {
-                    if (input.value.trim() === '') {
-                        if (group.parentNode) group.parentNode.removeChild(group);
-                        return;
-                    }
-                    window.showConfirm(window.songDeleteConfirmationMessage, 'تأكيد الحذف')
-                        .then(function(confirmed) {
-                            if (confirmed) {
-                                if (group.parentNode) group.parentNode.removeChild(group);
-                            }
-                        });
-                };
-            }
-        });
-        
-        // Focus the last song input if it's empty
-        const lastSongInput = dom.songsContainer.querySelector('.song-input:last-of-type');
-        if (lastSongInput && lastSongInput.value === '') {
-            lastSongInput.focus();
-        }
-    }
-
-    function setupAutoExpand(inputEl) {
-        if (!inputEl || inputEl.parentNode.classList.contains('auto-expand-input-container')) {
-            return;
-        }
-        const container = document.createElement('div');
-        container.className = 'auto-expand-input-container';
-        inputEl.parentNode.insertBefore(container, inputEl);
-        container.appendChild(inputEl);
-        container.dataset.value = inputEl.value;
-        inputEl.addEventListener('input', () => {
-            container.dataset.value = inputEl.value;
-        });
-    }
-
-    // ✅ دالة تحديث فوري بعد الحفظ أو التعديل
-    function afterSuccessfulSaveOrEdit(updatedListFromServer) {
-        try {
-            if (Array.isArray(updatedListFromServer)) {
-                localStorage.setItem('sheet_playlists_cache_v2', JSON.stringify(updatedListFromServer));
-                localStorage.setItem('sheet_playlists_cache_time_v2', String(Date.now()));
-
-                // --- ✅ تحقق إن كان هذا أول إدخال ---
-                const alreadySet = localStorage.getItem('firstPlaylistCreationTime');
-if (!alreadySet && updatedListFromServer.length === 1) {
-    localStorage.setItem('firstPlaylistCreationTime', String(Date.now()));
-    localStorage.setItem('firstPlaylistWhatsappLink', 'https://wa.me/968XXXXXXXX'); // ضع رقمك هنا
-    localStorage.setItem('firstPlaylistCreated', 'true'); 
-    localStorage.setItem('firstPlaylistMessageShown', 'false'); // ✅ أول مرة لم تُعرض بعد
+/* Component styles for forms */
+.optional-hint {
+    color: #666;
+    font-size: 0.85em;
+    margin-right: 5px;
 }
-            }
-        } catch {}
-        if (typeof window.updateLocalPlaylists === 'function') {
-            const cached = JSON.parse(localStorage.getItem('sheet_playlists_cache_v2') || '[]');
-            window.updateLocalPlaylists(cached);
-        }
-        if (typeof window.syncDataFromSheet === 'function') {
-            window.syncDataFromSheet();
-        }
-    }
 
-    // Make functions globally accessible
-    window.updateDayNameDisplay = updateDayNameDisplay;
-    window.updateDateAvailabilityMessage = updateDateAvailabilityMessage;
-    window.showForm = showForm;
-    window.requestAddSongField = requestAddSongField;
-    window.resetForm = resetForm;
-    window.populateEditForm = populateEditForm;
-    window.afterSuccessfulSaveOrEdit = afterSuccessfulSaveOrEdit;
+.phone-input {
+    text-align: right;
+    direction: ltr;
+    padding-left: 10px;
+}
 
-})();
+.phone-input::placeholder {
+    color: #8E7B7B;
+    text-align: right;
+}
+
+/* @tweakable Form container positioning for mobile */
+.form-container {
+    max-width: var(--form-max-width, 500px);
+    margin: 0 auto; /* هذه الخاصية هي المسؤولة عن التوسيط */
+    padding: 1rem;
+}
+
+.form-container h2, .list-container h2 {
+    margin-bottom: 1rem;
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.3rem;
+    color: var(--primary-color);
+    font-size: 1.3rem;
+}
+
+.form-group {
+    margin-bottom: 0.8rem;
+}
+
+.form-group label {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.form-group .icon {
+    margin-left: 8px;
+    color: var(--primary-color);
+    width: 20px;
+    text-align: center;
+}
+
+/* Icon color assignments */
+label[for="partyName"] .icon { color: var(--icon-color-1); }
+label[for="partyDate"] .icon { color: var(--icon-color-2); }
+label[for="partyTime"] .icon { color: var(--icon-color-3); }
+label[for="partyLocation"] .icon { color: var(--icon-color-4); }
+label[for="guestCount"] .icon { color: var(--icon-color-5); }
+label[for="notes"] .icon { color: var(--icon-color-6); }
+label[for="eventDate"] .icon { color: var(--icon-color-2); }
+label[for="eventLocation"] .icon { color: var(--icon-color-4); }
+label[for="brideZaffa"] .icon { color: var(--icon-color-5); }
+label[for="groomZaffa"] .icon { color: var(--icon-color-1); }
+label[for="phoneNumber"] .icon { color: var(--icon-color-3); }
+.songs-section h3 .icon { color: var(--icon-color-3); }
+
+/* @tweakable The opacity of form elements when they are disabled */
+:root { --disabled-opacity: 0.6; }
+
+input[type="text"]:disabled,
+input[type="date"]:disabled,
+input[type="time"]:disabled,
+input[type="number"]:disabled,
+input[type="tel"]:disabled,
+input[type="password"]:disabled,
+textarea:disabled,
+button:disabled {
+    cursor: not-allowed;
+    opacity: var(--disabled-opacity);
+}
+
+input[type="text"],
+input[type="date"],
+input[type="time"],
+input[type="number"],
+input[type="tel"],
+input[type="password"],
+textarea {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* @tweakable The minimum width for form inputs that expand automatically. */
+:root { --auto-expand-min-width: 150px; }
+
+/* Styles for auto-expanding inputs */
+.auto-expand-input-container {
+    display: inline-grid;
+    width: 100%;
+    vertical-align: top;
+    align-items: center;
+}
+.auto-expand-input-container::after,
+.auto-expand-input-container > input {
+    width: auto;
+    min-width: 1px; /* Let it shrink to almost nothing */
+    grid-area: 1 / 1;
+    font: inherit;
+    padding: 0.6rem;
+    margin: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 0.95rem;
+    box-sizing: border-box;
+    appearance: none;
+}
+.auto-expand-input-container > input {
+    background-color: transparent;
+    min-width: var(--auto-expand-min-width);
+}
+.auto-expand-input-container > input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+.auto-expand-input-container::after {
+    content: attr(data-value) ' ';
+    visibility: hidden;
+    white-space: pre; /* Use pre to respect spaces */
+    border-color: transparent;
+}
+
+textarea.autoresize {
+    /* @tweakable 'vertical' allows manual vertical resize, 'none' disables it */
+    resize: none;
+    overflow-y: hidden;
+    line-height: 1.6;
+    /* @tweakable The initial minimum height for the notes textarea. */
+    min-height: 120px;
+}
+
+input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+.form-buttons {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 0.8rem;
+}
+
+/* Song input styles */
+.songs-section {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
+    padding-top: 1rem;
+}
+
+.songs-section h3 {
+    display: flex;
+    align-items: center;
+    color: var(--primary-color);
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+}
+
+#songs-container .song-input-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+#songs-container .song-input-container {
+    flex-grow: 1;
+}
+
+#songs-container .song-input {
+    flex-grow: 1;
+}
+
+#songs-container .remove-song-btn {
+    background: none;
+    border: none;
+    color: var(--danger-color);
+    cursor: pointer;
+    font-size: 1.2rem;
+}
+
+.add-song-btn {
+    background-color: transparent;
+    border: 2px dashed var(--primary-color);
+    color: var(--primary-color);
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 0.3rem;
+    font-size: 0.9rem;
+}
+
+.add-song-btn:hover {
+    background-color: rgba(74, 144, 226, 0.1);
+}
+
+.date-input-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.date-input-container > input[type="date"] {
+    width: auto;
+    flex-grow: 1;
+}
+
+.availability-message {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    padding: 5px;
+    border-radius: 4px;
+    text-align: center;
+    font-weight: bold;
+    display: none; /* Hidden by default */
+    transition: all 0.3s ease;
+}
+
+.availability-message.available {
+    color: #28a745;
+    background-color: #e9f7ef;
+    display: block;
+}
+
+.availability-message.booked {
+    color: #dc3545;
+    background-color: #fceeee;
+    display: block;
+}
+
+.day-name-display {
+    color: var(--primary-color);
+    font-weight: bold;
+    font-size: 1.0rem;
+    background: linear-gradient(45deg, var(--primary-color), blue);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent; /* Fallback for browsers that do not support text-fill-color */
+    white-space: nowrap;
+    font-weight: bold;
+}
