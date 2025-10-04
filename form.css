@@ -18,7 +18,7 @@
 
 .form-container {
     max-width: var(--form-max-width, 500px);
-    margin: 0 auto;
+    margin: 0 auto; /* هذه الخاصية هي المسؤولة عن التوسيط */
     padding: 1rem;
 }
 
