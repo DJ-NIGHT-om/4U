@@ -45,29 +45,12 @@ body {
     line-height: 1.6;
     direction: rtl;
     text-align: right;
-    /* تحسينات لمنع الانزياح */
-    overflow-x: hidden;
-    width: 100%;
-    max-width: 100%;
-    position: relative;
-    margin: 0;
-    padding: 0;
-    /* إضافة لمنع التكبير التلقائي على iOS */
-    touch-action: pan-y;
-    -webkit-overflow-scrolling: touch;
 }
 
 .container {
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
-    width: 100%;
-    box-sizing: border-box;
-    margin-left: auto;
-    margin-right: auto;
-    /* إضافة لمنع الانزياح */
-    overflow-x: hidden;
-    max-width: 100%;
 }
 
 header {

@@ -9,6 +9,7 @@
     text-align: right;
     direction: ltr;
     padding-left: 10px;
+   
 }
 
 .phone-input::placeholder {
@@ -16,25 +17,25 @@
     text-align: right;
 }
 
-/* @tweakable Form container positioning for mobile devices */
+.card {
+    background-color: var(--card-bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, max-height 0.5s ease-in-out;
+   
+  
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px var(--shadow-color);
+}
+
 .form-container {
     max-width: var(--form-max-width, 500px);
     margin: 0 auto;
     padding: 1rem;
-    min-width: 280px;
-    padding-left: 15px;
-    padding-right: 15px;
-    /* إزالة الخصائص التي تسبب المشكلة */
-    /* left: 50%; */
-    /* transform: translateX(-50%); */
-    position: relative;
-    overflow-x: hidden;
-    width: 100%;
-    box-sizing: border-box;
-    margin-left: auto;
-    margin-right: auto;
-    /* إضافة خاصية لمنع الانزياح */
-    max-width: 100%;
 }
 
 .form-container h2, .list-container h2 {
@@ -62,6 +63,7 @@
     color: var(--primary-color);
     width: 20px;
     text-align: center;
+  
 }
 
 /* Icon color assignments */
@@ -107,6 +109,8 @@ textarea {
     font-family: 'Tajawal', sans-serif;
     font-size: 0.95rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  
+  
 }
 
 /* @tweakable The minimum width for form inputs that expand automatically. */
@@ -163,12 +167,320 @@ input:focus, textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+  
 }
 
 .form-buttons {
     display: flex;
     gap: 0.8rem;
     margin-top: 0.8rem;
+}
+
+.submit-btn, .cancel-btn {
+    flex: 1;
+    padding: 0.8rem;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.3s ease;
+    text-transform: uppercase;
+    margin-top: 0;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.submit-btn {
+    background: linear-gradient(45deg, var(--primary-color), #6aaff8);
+}
+
+.green-btn {
+    background: linear-gradient(45deg, #28a745, #5cb85c) !important;
+}
+
+.green-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4) !important;
+}
+
+.red-btn {
+    background: linear-gradient(45deg, #dc3545, #f5365c) !important;
+}
+
+.red-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4) !important;
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.4);
+  background-color: #E3FCE0;
+}
+
+.cancel-btn {
+    background: var(--light-text-color);
+}
+
+.cancel-btn:hover {
+    background: #888;
+    transform: translateY(-2px);
+ 
+}
+
+.header-btn {
+    flex: 0 1 auto;
+    padding: 0.7rem 1.2rem;
+    font-size: 1rem;
+    text-transform: none;
+}
+
+/* Playlist cards */
+#playlist-section {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    align-items: start;
+  
+}
+
+.playlist-card {
+    background-color: var(--card-bg-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px var(--shadow-color);
+    border-right: 5px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.5s ease;
+}
+
+.playlist-card.edited {
+    /* @tweakable The background color for a card that has just been edited */
+    background-color: #e3fcef;
+    /* @tweakable The right border color for a card that has just been edited */
+    border-right-color: #2dce89;
+}
+
+.playlist-card.deleting {
+    animation: fadeOutAndShrink 0.3s ease-out forwards;
+}
+
+@keyframes fadeOutAndShrink {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+}
+
+.playlist-card.selected {
+    border-right-color: var(--secondary-color) !important;
+    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.3) !important;
+    transform: translateY(-3px);
+   
+}
+
+.playlist-card.selected .icon {
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.playlist-card.selected .fa-map-marker-alt {
+    color: var(--icon-color-4) !important;
+    animation: iconPulse 0.3s ease-in-out;
+  
+}
+
+.playlist-card.selected .fa-calendar-alt {
+    color: var(--icon-color-2) !important;
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+.playlist-card.selected .fa-phone {
+    color: var(--icon-color-3) !important;
+    animation: iconPulse 0.3s ease-in-out;
+  
+}
+
+.playlist-card.selected .fa-female {
+    color: var(--icon-color-5) !important;
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+.playlist-card.selected .fa-male {
+    color: var(--icon-color-1) !important;
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+.playlist-card.selected .fa-music {
+    color: var(--icon-color-3) !important;
+    animation: iconPulse 0.3s ease-in-out;
+}
+
+@keyframes iconPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.playlist-card-header {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: var(--card-header-gap, 1.5rem);
+}
+
+.playlist-card-header h3 {
+    color: var(--primary-color);
+    font-size: 1.1rem;
+    margin-bottom: 0;
+    font-weight: bold;
+   color: #0092cb;
+}
+
+.playlist-card-header span {
+    color: #0092cb;
+    font-weight: bold;
+  
+}
+
+.playlist-card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.playlist-card-info p {
+    margin-bottom: 0;
+    color: black;
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+   background-color: #E3FCE0;
+   
+}
+
+.playlist-card-info p span {
+    color: var(--text-color);
+}
+
+.playlist-card-info p strong {
+    color: var(--primary-color);
+  
+}
+
+.playlist-notes {
+    margin-top: 1rem;
+}
+
+.playlist-notes h4 {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.playlist-notes p {
+    background-color: #FCF4E4;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border-right: 3px solid var(--secondary-color);
+    white-space: pre-wrap; /* Preserve whitespace and newlines */
+    word-break: break-word; /* Ensure long text wraps */
+    color: #DB8100;
+   font-weight: bold;
+}
+
+.playlist-card .icon {
+    margin-left: 10px;
+    width: 20px;
+    color: var(--primary-color);
+  
+}
+
+.playlist-songs {
+    margin-top: 1rem;
+  
+  
+}
+
+.playlist-songs h4 {
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.playlist-songs ol {
+    padding-right: 20px;
+    color: #8e44ad;
+  
+}
+
+.playlist-songs li {
+    margin-bottom: 5px;
+    font-weight: bold;
+    background-color: #ffe7ff;
+}
+
+.playlist-actions {
+    display: flex;
+    flex-direction: column; /* Changed to stack buttons and timestamp */
+    gap: 10px;
+    margin-top: var(--playlist-actions-margin-top);
+    align-items: flex-start; /* Align items to the start */
+}
+
+.action-buttons-wrapper {
+    display: flex;
+    gap: 10px;
+}
+
+.creation-timestamp {
+    /* @tweakable The color of the creation timestamp text */
+    color: var(--primary-color);
+    /* @tweakable The font size of the creation timestamp text */
+    font-size: 0.8rem;
+    margin-top: 5px;
+}
+
+.action-btn {
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    padding: var(--modal-button-padding, 0.4rem 0.8rem);
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: bold;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px var(--shadow-color);
+    opacity: 0.9;
+}
+
+.action-btn.edit-btn {
+    background-color: var(--icon-color-2);
+}
+
+.action-btn.delete-btn {
+    background-color: var(--danger-color);
 }
 
 /* Song input styles */
@@ -273,7 +585,8 @@ input:focus, textarea:focus {
     -webkit-text-fill-color: transparent;
     color: transparent; /* Fallback for browsers that do not support text-fill-color */
     white-space: nowrap;
-    font-weight: bold;
+   font-weight: bold;
+  
 }
 
 .playlist-card-header .day-name {
@@ -281,6 +594,196 @@ input:focus, textarea:focus {
     font-size: 1.0rem;
     font-weight: normal;
     margin-right: 5px;
+   font-weight: bold;
+   color: #c34a36
+  
+}
+
+/* Modal styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    opacity: 1;
+    transition: opacity 0.2s ease;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: var(--card-bg-color);
+    border: none;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: none;
+    max-width: var(--modal-max-width, 320px);
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+    animation: none;
+    transform: scale(1);
+}
+
+.modal-content h3 {
+    color: var(--text-color);
+    font-size: var(--modal-title-font-size, 1.4rem);
+    margin-bottom: 1rem;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     font-weight: bold;
-    color: #c34a36
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.modal-content p {
+    color: var(--text-color);
+    font-size: var(--modal-message-font-size, 1.1rem);
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    font-weight: var(--modal-message-font-weight, bold);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.modal-buttons button {
+    flex: 0 1 auto; /* Changed from flex: 1 to prevent buttons from stretching */
+    min-width: var(--modal-button-min-width, 100px);
+    padding: var(--modal-button-padding, 0.5rem 1rem);
+    border: 2px solid var(--primary-color);
+    border-radius: 4px;
+    font-size: var(--modal-button-font-size, 0.9rem);
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: none;
+    letter-spacing: normal;
+    position: relative;
+    overflow: visible;
+}
+
+.modal-buttons .submit-btn {
+    background: var(--primary-color);
+    color: white;
+    box-shadow: none;
+}
+
+.modal-buttons .submit-btn:hover {
+    background: #3a7bc8;
+    transform: none;
+    box-shadow: none;
+}
+
+.modal-buttons .cancel-btn {
+    background: white;
+    color: var(--text-color);
+    border-color: var(--light-text-color);
+    box-shadow: none;
+}
+
+.modal-buttons .cancel-btn:hover {
+    background: #f5f5f5;
+    transform: none;
+    box-shadow: none;
+}
+
+#modal-form-content {
+    margin: 1rem 0;
+}
+
+#modal-form-content .form-group {
+    margin-bottom: 1.2rem;
+}
+
+#modal-form-content label {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    font-size: 1rem;
+}
+
+#modal-form-content .icon {
+    margin-left: 8px;
+    color: var(--primary-color);
+    width: 20px;
+    text-align: center;
+}
+
+#modal-form-content input[type="text"],
+#modal-form-content input[type="password"] {
+    width: 100%;
+    padding: 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-family: 'Tajawal', sans-serif;
+    font-size: 1rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+#modal-form-content input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
+}
+
+/* Responsive design for components */
+@media (max-width: 992px) {
+    #playlist-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 1200px) {
+    #playlist-section {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    #playlist-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        padding: 2rem;
+        margin: 1rem;
+        width: calc(100% - 2rem);
+    }
+    
+    .modal-content h3 {
+        font-size: 1.5rem;
+    }
+    
+    .modal-content p {
+        font-size: 1.1rem;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-buttons button {
+        flex: none;
+        width: 100%;
+    }
 }
