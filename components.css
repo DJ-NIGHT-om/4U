@@ -36,6 +36,20 @@
     max-width: var(--form-max-width, 500px);
     margin: 0 auto;
     padding: 1rem;
+    min-width: 280px;
+    padding-left: 15px;
+    padding-right: 15px;
+    /* إزالة الخصائص التي تسبب المشكلة */
+    /* left: 50%; */
+    /* transform: translateX(-50%); */
+    position: relative;
+    overflow-x: hidden;
+    width: 100%;
+    box-sizing: border-box;
+    margin-left: auto;
+    margin-right: auto;
+    /* إضافة خاصية لمنع الانزياح */
+    max-width: 100%;
 }
 
 .form-container h2, .list-container h2 {
