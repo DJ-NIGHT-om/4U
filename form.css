@@ -20,6 +20,17 @@
     max-width: var(--form-max-width, 500px);
     margin: 0 auto;
     padding: 1rem;
+    /* @tweakable The minimum width of the form container on mobile devices */
+    min-width: 280px;
+    /* @tweakable The amount of padding on each side of the form container */
+    padding-left: 15px;
+    padding-right: 15px;
+    /* @tweakable When true, the form will use viewport units to stay centered */
+    left: 50%;
+    transform: translateX(-50%);
+    position: relative;
+    /* @tweakable Controls if the form can be scrolled horizontally on mobile */
+    overflow-x: hidden;
 }
 
 .form-container h2, .list-container h2 {
