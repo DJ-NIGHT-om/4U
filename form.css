@@ -31,6 +31,10 @@
     position: relative;
     /* @tweakable Controls if the form can be scrolled horizontally on mobile */
     overflow-x: hidden;
+    /* @tweakable Prevent form from causing layout shifts during input */
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .form-container h2, .list-container h2 {

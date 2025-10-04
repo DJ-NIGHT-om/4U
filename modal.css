@@ -15,6 +15,9 @@
     transition: opacity 0.2s ease;
     /* @tweakable Padding around modal on mobile screens */
     padding: 10px;
+    /* @tweakable Prevent modal overlay from causing horizontal overflow */
+    max-width: 100vw;
+    overflow: hidden;
 }
 
 .modal-overlay.hidden {
