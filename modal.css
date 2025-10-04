@@ -13,6 +13,8 @@
     z-index: 2000;
     opacity: 1;
     transition: opacity 0.2s ease;
+    /* @tweakable Padding around modal on mobile screens */
+    padding: 10px;
 }
 
 .modal-overlay.hidden {
@@ -27,12 +29,18 @@
     padding: 1.5rem;
     box-shadow: none;
     max-width: var(--modal-max-width, 320px);
-    width: 90%;
+    /* @tweakable Maximum width of modal content as percentage of viewport width */
+    max-width: 95vw;
+    width: 100%;
     max-height: 80vh;
     overflow-y: auto;
     position: relative;
     animation: none;
     transform: scale(1);
+    /* @tweakable Minimum width of modal content */
+    min-width: 280px;
+    /* @tweakable Center positioning with margin auto */
+    margin: 0 auto;
 }
 
 .modal-content h3 {
@@ -66,7 +74,7 @@
 }
 
 .modal-buttons button {
-    flex: 0 1 auto; /* Changed from flex: 1 to prevent buttons from stretching */
+    flex: 0 1 auto;
     min-width: var(--modal-button-min-width, 100px);
     padding: var(--modal-button-padding, 0.5rem 1rem);
     border: 2px solid var(--primary-color);
@@ -146,21 +154,27 @@
     box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2);
 }
 
-
 /* Responsive design for modals */
 @media (max-width: 768px) {
     .modal-content {
-        padding: 2rem;
-        margin: 1rem;
-        width: calc(100% - 2rem);
+        /* @tweakable Padding for modal content on mobile screens */
+        padding: 1rem;
+        /* @tweakable Margin for modal content on mobile screens */
+        margin: 5px;
+        /* @tweakable Width calculation for modal content on mobile */
+        width: calc(100% - 10px);
+        /* @tweakable Maximum width percentage for mobile screens */
+        max-width: 98vw;
+        /* @tweakable Minimum width for modal on mobile */
+        min-width: 260px;
     }
     
     .modal-content h3 {
-        font-size: 1.5rem;
+        font-size: 1.3rem;
     }
     
     .modal-content p {
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
     
     .modal-buttons {
@@ -170,5 +184,29 @@
     .modal-buttons button {
         flex: none;
         width: 100%;
+        /* @tweakable Margin between buttons in mobile view */
+        margin-bottom: 5px;
+    }
+    
+    .modal-buttons button:last-child {
+        margin-bottom: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-overlay {
+        /* @tweakable Padding for modal overlay on very small screens */
+        padding: 5px;
+    }
+    
+    .modal-content {
+        /* @tweakable Border radius for modal on very small screens */
+        border-radius: 6px;
+        /* @tweakable Padding for modal content on very small screens */
+        padding: 0.8rem;
+        /* @tweakable Maximum width for modal on very small screens */
+        max-width: 100vw;
+        /* @tweakable Minimum width for modal on very small screens */
+        min-width: 240px;
     }
 }
