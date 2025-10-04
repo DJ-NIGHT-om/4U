@@ -45,27 +45,29 @@ body {
     line-height: 1.6;
     direction: rtl;
     text-align: right;
-    /* @tweakable Prevent horizontal overflow that causes right shift */
+    /* تحسينات لمنع الانزياح */
     overflow-x: hidden;
-    /* @tweakable Ensure body takes full viewport width */
-    width: 100vw;
+    width: 100%;
     max-width: 100%;
-    /* @tweakable Prevent body from causing horizontal overflow */
     position: relative;
     margin: 0;
     padding: 0;
+    /* إضافة لمنع التكبير التلقائي على iOS */
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
 }
 
 .container {
     max-width: 1200px;
     margin: 2rem auto;
     padding: 0 1rem;
-    /* @tweakable Prevent container from causing horizontal overflow */
     width: 100%;
     box-sizing: border-box;
-    /* @tweakable Center container on mobile with auto margins */
     margin-left: auto;
     margin-right: auto;
+    /* إضافة لمنع الانزياح */
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 header {

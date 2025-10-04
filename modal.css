@@ -14,9 +14,11 @@
     z-index: 2000;
     opacity: 1;
     transition: opacity 0.2s ease;
-    /* @tweakable Prevent modal overlay from causing horizontal overflow */
     max-width: 100vw;
     overflow: hidden;
+    /* إضافة لمنع الانزياح */
+    padding: 10px;
+    box-sizing: border-box;
 }
 
 .modal-overlay.hidden {
