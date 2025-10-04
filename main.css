@@ -50,6 +50,8 @@ body {
     /* @tweakable Ensure body takes full viewport width */
     width: 100vw;
     max-width: 100%;
+    /* @tweakable Prevent body from causing horizontal overflow */
+    position: relative;
     margin: 0;
     padding: 0;
 }
@@ -61,6 +63,9 @@ body {
     /* @tweakable Prevent container from causing horizontal overflow */
     width: 100%;
     box-sizing: border-box;
+    /* @tweakable Center container on mobile with auto margins */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 header {

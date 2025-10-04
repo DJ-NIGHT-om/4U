@@ -16,6 +16,7 @@
     text-align: right;
 }
 
+/* @tweakable Form container positioning for mobile */
 .form-container {
     max-width: var(--form-max-width, 500px);
     margin: 0 auto;
@@ -35,6 +36,9 @@
     position: relative;
     width: 100%;
     box-sizing: border-box;
+    /* @tweakable Center form on mobile with auto margins */
+    margin-left: auto;
+    margin-right: auto;
 }
 
 .form-container h2, .list-container h2 {
