@@ -44,7 +44,7 @@
 
             let welcomeText = 'مرحباً، ' + currentUser;
             if (isAdmin) {
-                const adminWelcomeTemplate = ' (مدير) | عدد قواعد البيانات: ({count})';
+                const adminWelcomeTemplate = ' (مدير) | عدد المناسبات المحفوظة بالموقع: ({count})';
                 const playlistCount = window.getAllPlaylists ? window.getAllPlaylists().length : 0;
                 welcomeText += adminWelcomeTemplate.replace('{count}', playlistCount);
             }
