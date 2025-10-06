@@ -48,9 +48,12 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    /* @tweakable The maximum width for the main content container. Increase for wider layouts, decrease for more compact ones. */
+    max-width: 98vw;
+    /* @tweakable The vertical margin (top/bottom) for the main content container. First value is top, second is bottom. */
     margin: 2rem auto;
-    padding: 0 1rem;
+    /* @tweakable The horizontal padding (left/right) for the main content container. Adjust to control minimum space from screen edges. */
+    padding: 0 0.5rem;
 }
 
 header {
